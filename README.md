@@ -1,4 +1,4 @@
-# tna_account_management django site
+# TNA Account Management prototype
 
 # Setting up a local build
 
