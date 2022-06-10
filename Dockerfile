@@ -128,4 +128,4 @@ USER tna_account_management
 COPY --chown=tna_account_management --from=frontend ./node_modules ./node_modules
 
 # do nothing forever - exec commands elsewhere
-CMD tail -f /dev/null
+# CMD tail -f /dev/null

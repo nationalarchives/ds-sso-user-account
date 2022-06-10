@@ -581,6 +581,7 @@ REST_FRAMEWORK = {
     )
 }
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 AUTH_USER_MODEL = "users.User"
 
