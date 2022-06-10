@@ -1,0 +1,87 @@
+version: '3.7'
+services:
+  web:
+    build:
+      context: .
+      args:
+        BUILD_ENV: dev
+        POETRY_INSTALL_ARGS: ''
+      target: dev
+    environment:
+      ALLOWED_HOSTS: 127.0.0.1,0.0.0.0,localhost
+      DATABASE_URL: postgres://tna_account_management:tna_account_management@db:5432/tna_account_management # pragma: allowlist secret
+      DJANGO_SETTINGS_MODULE: tna_account_management.settings.dev
+      MEDIA_DIR: /app/media/
+      RECAPTCHA_PRIVATE_KEY: UPDATE_THIS # pragma: allowlist secret
+      RECAPTCHA_PUBLIC_KEY: UPDATE_THIS
+      REDIS_URL: redis://redis
+      ENABLE_DJANGO_DEFENDER: 'false'
+      SECRET_KEY: local_dev_secret_key
+      SECURE_SSL_REDIRECT: 'false'
+      STATIC_DIR: /app/static/
+      STATIC_URL: /static/
+    command: tail -f /dev/null # do nothing forever - exec commands elsewhere
+    ports:
+      - 8000:8000 # runserver
+      - 8001:8001 # mkdocs serve
+      - 6900:6900 # pudb
+    volumes:
+      - ./.git:/app/.git:rw
+      - ./docs:/app/docs:rw
+      - ./media:/app/media:rw
+      - ./public:/app/public:rw
+      - ./docker:/app/docker:rw
+      - ./tna_account_management:/app/tna_account_management:rw
+      - ./README.md:/app/README.md:rw
+      - ./fabfile.py:/app/fabfile.py:rw
+      - ./.pre-commit-config.yaml:/app/.pre-commit-config.yaml:rw
+
+      # Docs config
+      - ./mkdocs.yml:/app/mkdocs.yml:rw
+
+      # Backend config
+      - ./manage.py:/app/manage.py:rw
+      - ./pyproject.toml:/app/pyproject.toml:rw
+      - ./poetry.lock:/app/poetry.lock:rw
+      - ./setup.cfg:/app/setup.cfg:rw
+
+      # Frontend config
+      - ./.editorconfig:/app/.editorconfig:rw
+      - ./.eslintignore:/app/.eslintignore:rw
+      - ./.eslintrc.js:/app/.eslintrc.js:rw
+      - ./.prettierignore:/app/.prettierignore:rw
+      - ./.prettierrc.toml:/app/.prettierrc.toml:rw
+      - ./.stylelintignore:/app/.stylelintignore:rw
+      - ./.stylelintrc.js:/app/.stylelintrc.js:rw
+      - ./jest.config.js:/app/jest.config.js:rw
+      - ./package-lock.json:/app/package-lock.json:rw
+      - ./package.json:/app/package.json:rw
+      - ./tsconfig.json:/app/tsconfig.json:rw
+      - ./webpack.config.js:/app/webpack.config.js:rw
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:12.3
+    expose:
+      - 5432
+    environment:
+      POSTGRES_DB: tna_account_management
+      POSTGRES_USER: tna_account_management
+      POSTGRES_PASSWORD: tna_account_management # pragma: allowlist secret
+      PGDATABASE: tna_account_management
+      PGUSER: tna_account_management
+      PGPASSWORD: tna_account_management # pragma: allowlist secret
+      POSTGRES_HOST_AUTH_METHOD: trust
+    logging:
+      driver: none
+    volumes:
+      - .:/app:ro
+
+  redis:
+    image: redis:6
+    expose:
+      - 6379
+    logging:
+      driver: none

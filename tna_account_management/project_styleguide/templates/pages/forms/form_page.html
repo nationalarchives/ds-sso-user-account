@@ -1,0 +1,25 @@
+{% extends "patterns/base_page.html" %}
+{% load crispy_forms_tags %}
+
+{% comment %}
+Fix for Chrome which doesn't correctly scroll to form validation messages
+when this is set to smooth
+{% endcomment %}
+{% block html_class %}no-scroll-behaviour{% endblock %}
+
+{% block content %}
+    <div class="u-layout">
+
+        <h1>{{ page.title }}</h1>
+        {% if page.introduction %}
+            <p>{{ page.introduction }}</p>
+        {% endif %}
+
+        {% if form %}
+            {% crispy form %}
+        {% endif %}
+
+        {% include "patterns/molecules/share/share.html" %}
+
+    </div>
+{% endblock %}

@@ -1,0 +1,5 @@
+.highcharts-root,
+.highcharts-container,
+.project-item__chart {
+    overflow: visible !important; // ensure tooltip doesn't get cut off
+}

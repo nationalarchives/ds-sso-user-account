@@ -1,0 +1,72 @@
+// --------------------------------- Colors -------------------------------------
+
+$color--primary: #003078;
+$color--secondary: #b2a38e;
+$color--tertiary: #f9f7e2;
+$color--orange: #d1452f;
+
+$color--white: #fff;
+$color--black: #111;
+$color--off-black: #26262a;
+$color--off-white: #ecf2fa;
+$color--red: #f00;
+$color--blue: #45515f;
+$color--blue-light: #f4f7fc;
+
+$color--background: $color--off-white;
+$color--border: rgba($color--off-black, 0.2);
+$color--link: $color--off-black;
+
+$color--default: $color--off-black;
+
+// Bootstrap overrides
+$primary: $color--primary;
+$secondary: $color--secondary;
+$table-hover-bg: $color--tertiary;
+
+// --------------------------------- Fonts --------------------------------------
+
+$font--primary: system-ui, -apple-system, 'segoe ui', roboto, 'helvetica neue',
+    arial, 'noto sans', 'liberation sans', sans-serif;
+$font--secondary: $font--primary;
+
+// Font weights
+$weight--bold: 700;
+$weight--semibold: 600;
+$weight--medium: 500;
+$weight--normal: 400;
+$weight--light: 200;
+
+// Font sizes
+$base-font-size: 16px;
+$base-line-height: 25px;
+
+// --------------------------------- Breakpoints --------------------------------------
+$breakpoints: ('medium' '(min-width: 599px)', 'large' '(min-width: 1023px)');
+
+// --------------------------------- Grid Dimensions --------------------------------------
+
+// Wrappers
+$site-width: 1280px;
+$wrapper--small: 790px;
+
+// Grid setup
+$grid: 20px;
+
+// --------------------------------- Transitions --------------------------------------
+
+$transition: 0.25s ease-out;
+
+// --------------------------------- Z-indices --------------------------------------
+
+$z-index: (
+    under: -1,
+    base: 10,
+    overlap: 20,
+    header: 30,
+    footer: 40,
+    nav: 50,
+    cookie-message: 100,
+    modal: 110,
+    modal-controls: 120,
+);

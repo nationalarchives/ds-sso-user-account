@@ -1,0 +1,26 @@
+.record-sets {
+    $root: &;
+
+    &__item {
+        margin-right: 1px;
+
+        &:first-child {
+            border-radius: 1px;
+            overflow: hidden;
+
+            .badge {
+                border-radius: 3px 0 0 3px !important;
+            }
+        }
+
+        &:last-child {
+            .badge {
+                border-radius: 0 3px 3px 0 !important;
+            }
+        }
+
+        .badge {
+            border-radius: 0 !important;
+        }
+    }
+}
