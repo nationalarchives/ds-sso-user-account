@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "crispy_forms",
     "tbxforms",
     "tna_account_management.users",
+    "tna_account_management.authentication",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -584,6 +585,14 @@ REST_FRAMEWORK = {
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 AUTH_USER_MODEL = "users.User"
+LOGIN_URL = "/auth/login/"
+LOGOUT_REDIRECT_URL = "auth/logout/success/"
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+]
+# used by 'tna_account_management.authentication'
+AUTHENTICATION_PROVIDER = "django"
+
 
 # django-defender
 # Records failed login attempts and blocks access by username and IP
@@ -630,7 +639,6 @@ PATTERN_LIBRARY = {
 # Google Tag Manager ID from env
 GOOGLE_TAG_MANAGER_ID = env.get("GOOGLE_TAG_MANAGER_ID")
 
-
 # Allows us to toggle search indexing via an environment variable.
 SEO_NOINDEX = env.get("SEO_NOINDEX", "false").lower() == "true"
 
@@ -653,3 +661,13 @@ CRISPY_FAIL_SILENTLY = False  # Default for local development. Gets overridden.
 # -----------------------------------------------------------------------------
 TBXFORMS_ALLOW_HTML_LABEL = False
 TBXFORMS_ALLOW_HTML_BUTTON = False
+
+
+# Auth0 configuration
+# -----------------------------------------------------------------------------
+AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
+AUTH0_CLIENT_ID = os.getenv("AUTH0_CLIENT_ID")
+AUTH0_CLIENT_SECRET = os.getenv("AUTH0_CLIENT_SECRET")
+if AUTH0_DOMAIN:
+    AUTHENTICATION_PROVIDER = "auth0"
+    AUTHENTICATION_BACKENDS.append("tna_account_management.authentication.auth0.backend.Auth0Backend")
