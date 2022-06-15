@@ -23,6 +23,7 @@ coverage = "^5.4"
 django-defender = "0.9.1"
 djhtml = "^1.4.11"
 tbxforms = "1.0.16" # Should match package.json. Includes django-crispy-forms.
+Authlib = "^1.0.1"
 
 [tool.poetry.extras]
 gunicorn = ["gunicorn"]
