@@ -1,6 +1,9 @@
-from functools import cached_property
+from typing import Any, Dict, Sequence
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils.functional import cached_property
+from tna_account_management.utils import auth0
 
 
 class User(AbstractUser):
@@ -13,11 +16,24 @@ class User(AbstractUser):
         help_text="When set, self.profile will return this value instead of fetching real profile data from Auth0.",
     )
 
-    def get_full_name(self):
+    @classmethod
+    def get_unique_username(cls, base: str, exclude_pk: int = None) -> str:
+        candidate_username = base[:150]
+        username = candidate_username
+        i = 1
+        qs = User.objects.all()
+        if exclude_pk:
+            qs = qs.exclude(pk=exclude_pk)
+        while qs.filter(username=username).exists():
+            username = f"{candidate_username[:148]}{i}"
+            i += 1
+        return username
+
+    def get_full_name(self) -> str:
         return self.name
 
     @cached_property
-    def name_segments(self):
+    def name_segments(self) -> str:
         return self.name.strip().split(" ")
 
     @property
@@ -31,15 +47,26 @@ class User(AbstractUser):
         except IndexError:
             return ""
 
-    @classmethod
-    def get_unique_username(cls, base: str, exclude_pk: int = None):
-        candidate_username = base[:150]
-        username = candidate_username
-        i = 1
-        qs = User.objects.all()
-        if exclude_pk:
-            qs = qs.exclude(pk=exclude_pk)
-        while qs.filter(username=username).exists():
-            username = f"{candidate_username[:148]}{i}"
-            i += 1
-        return username
+    @cached_property
+    def profile(self) -> Dict[str, Any]:
+        if self.profile_override is not None:
+            return self.profile_override
+        if self.auth0_id:
+            return auth0.users_client.get(id=self.auth_id)
+        return {}
+
+    @property
+    def addresses(self) -> Sequence[Dict[str, Any]]:
+        return self.profile.get("addresses", ())
+
+    def set_email_verified_status(self) -> None:
+        changed = False
+        value_from_profile = self.profile.get("email_verified")
+        if not self.email_verified and value_from_profile:
+            self.email_verified = True
+            changed = True
+        elif self.email_verified and value_from_profile is False:
+            self.email_verified = False
+            changed = True
+        if changed:
+            self.save(update_fields=["email_verified"])
