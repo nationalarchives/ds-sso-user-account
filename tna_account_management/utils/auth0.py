@@ -1,3 +1,5 @@
+from datetime import timedelta, datetime
+
 from django.conf import settings
 from django.utils.functional import cached_property
 
@@ -6,7 +8,6 @@ import requests
 from auth0.v3.authentication import GetToken
 from auth0.v3.management import Users, Roles
 from auth0.v3.rest import RestClient
-from auth0.v3.exceptions import Auth0Error
 
 
 class TokenGeneratingRestClient(RestClient):
@@ -16,29 +17,37 @@ class TokenGeneratingRestClient(RestClient):
     one when it expires.
     """
 
-    @cached_property
+    @property
     def access_token(self) -> str:
         """
         Generate a jwt token that this client can use to make requests.
         When the token eventually expires, the cached retur value can be
         cleared by calling clear_cached_access_token().
         """
+        current_time = datetime.now()
+        current_token = getattr(self, '_jwt_token', None)
+        current_token_expiry = getattr(self, '_jwt_token_expiry', current_time)
+
+        # Reuse the current token if it's still valid
+        if current_token and (current_time + timedelta(seconds=5) < current_token_expiry):
+            return current_token
+
+        # There is not current token, or it will soon expire,
+        # so generate a new one
         get_token = GetToken(settings.AUTH0_DOMAIN)
         result = get_token.client_credentials(
             settings.AUTH0_CLIENT_ID,
             settings.AUTH0_CLIENT_SECRET,
             f"https://{settings.AUTH0_DOMAIN}/api/v2/",
         )
-        return result['access_token']
 
-    def regenerate_access_token(self) -> None:
-        """
-        When Auth0 responds with a "401: Invalid Token", this method is
-        used to generate a fresh jwt token that can be used to repeat the
-        request.
-        """
-        self.__dict__.pop("access_token", None)
-        return self.access_token
+        # Store the token for reuse
+        self._jwt_token = result['access_token']
+
+        # Caclulate a new expiry date, so that we know when to
+        # generate a fresh token
+        self._jwt_token_expiry = datetime.now() + timedelta(result["expires_in"])
+        return self._jwt_token
 
     def add_auth_header(self, custom_headers):
         """
@@ -64,63 +73,36 @@ class TokenGeneratingRestClient(RestClient):
 
     def get(self, url, params=None, headers=None):
         """
-        Overrides RestClient.get() to retry with a fresh jwt token if the
-        initial attempt fails with a "401: Invalid token" response.
+        Overrides RestClient.get() to ensure the 'Authentication' header
+        is present.
         """
-        try:
-            headers = self.add_auth_header(headers)
-            return super().get(url, params, headers)
-        except Auth0Error as e:
-            if e.status_code != 401:
-                raise
-            self.regenerate_access_token()
-            return super().get(url, params, self.add_auth_header(headers))
+        return super().get(url, params, self.add_auth_header(headers))
 
     def post(self, url, data=None, headers=None):
         """
-        Overrides RestClient.post() to retry with a fresh jwt token if the
-        initial attempt fails with a "401: Invalid token" response.
+        Overrides RestClient.post() to ensure the 'Authentication' header
+        is present.
         """
-        try:
-            return super().post(url, data, self.add_auth_header(headers))
-        except Auth0Error as e:
-            if e.status_code != 401:
-                raise
-            self.regenerate_access_token()
-            return super().post(url, data, self.add_auth_header(headers))
+        return super().post(url, data, self.add_auth_header(headers))
 
     def patch(self, url, data=None):
         """
-        Overrides RestClient.patch() to retry with a fresh jwt token if the
-        initial attempt fails with a "401: Invalid token" response.
+        Overrides RestClient.patch() to ensure the 'Authentication' header
+        is present.
         """
-        first_attempt = True
-        while True:
-            response = requests.patch(
-                url, json=data, headers=self.get_base_headers(), timeout=self.options.timeout
-            )
-            if response.status_code == 401 and first_attempt:
-                self.regenerate_access_token()
-                first_attempt = False
-            else:
-                break
+        response = requests.patch(
+            url, json=data, headers=self.get_base_headers(), timeout=self.options.timeout
+        )
         return self._process_response(response)
 
     def put(self, url, data=None):
         """
-        Overrides RestClient.patch() to retry with a fresh jwt token if the
-        initial attempt fails with a "401: Invalid token" response.
+        Overrides RestClient.patch() to ensure the 'Authentication' header
+        is present.
         """
-        first_attempt = True
-        while True:
-            response = requests.put(
-                url, json=data, headers=self.get_base_headers(), timeout=self.options.timeout
-            )
-            if response.status_code == 401 and first_attempt:
-                self.regenerate_access_token()
-                first_attempt = False
-            else:
-                break
+        response = requests.put(
+            url, json=data, headers=self.get_base_headers(), timeout=self.options.timeout
+        )
         return self._process_response(response)
 
 
