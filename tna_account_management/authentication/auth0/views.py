@@ -55,8 +55,7 @@ def authorize(request):
         # Update user details to reflect profile
         user.__dict__.update(
             email=user_info["email"],
-            first_name=user_info.get("given_name", ""),
-            last_name=user_info.get("family_name", ""),
+            name=user_info.get("name", ""),
             username=User.get_unique_username(user_info["nickname"], exclude_pk=user.pk),
             email_verified=user_info["email_verified"]
         )
@@ -66,8 +65,7 @@ def authorize(request):
         user = User(
             auth0_id=auth0_id,
             email=user_info["email"],
-            first_name=user_info.get("given_name", ""),
-            last_name=user_info.get("family_name", ""),
+            name=user_info.get("name", ""),
             username=User.get_unique_username(user_info.get("nickname")),
             email_verified=user_info.get("email_verified", False)
         )
