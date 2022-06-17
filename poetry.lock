@@ -278,7 +278,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "django-csp"
-version = "3.6"
+version = "3.7"
 description = "Django Content Security Policy support."
 category = "main"
 optional = false
@@ -1176,7 +1176,7 @@ gunicorn = ["gunicorn"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.9"
-content-hash = "159518f38f42278b9a7d9b60e1039999f9627a72747752a811b2280ab707441b"
+content-hash = "6cd79d69b025af8b2fc8e521da6267ba4d16adf855ca417f5e4fd91678a43b31"
 
 [metadata.files]
 asgiref = [
@@ -1411,8 +1411,8 @@ django-crispy-forms = [
     {file = "django_crispy_forms-1.14.0-py3-none-any.whl", hash = "sha256:bc4d2037f6de602d39c0bc452ac3029d1f5d65e88458872cc4dbc01c3a400604"},
 ]
 django-csp = [
-    {file = "django_csp-3.6-py2.py3-none-any.whl", hash = "sha256:d9ee5a8c6442aa54854e8de627c2826786208ed38fb4ea8ced08c42332673eb1"},
-    {file = "django_csp-3.6.tar.gz", hash = "sha256:0a38aa9618c675cbf5f5e517e20d5846a3e100ef7b307e32e7fb18c58aa47723"},
+    {file = "django_csp-3.7-py2.py3-none-any.whl", hash = "sha256:01443a07723f9a479d498bd7bb63571aaa771e690f64bde515db6cdb76e8041a"},
+    {file = "django_csp-3.7.tar.gz", hash = "sha256:01eda02ad3f10261c74131cdc0b5a6a62b7c7ad4fd017fbefb7a14776e0a9727"},
 ]
 django-defender = [
     {file = "django-defender-0.9.1.tar.gz", hash = "sha256:5828729c77eb07f0d7aea1e757b092cdc13a5858b21b100f6fbab7ccbfd3bdb1"},
