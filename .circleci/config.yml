@@ -2,7 +2,7 @@ version: 2
 jobs:
   test:
     docker:
-      - image: circleci/python:3.9-buster-node
+      - image: circleci/python:3.10-buster-node
         environment:
           ALLOWED_HOSTS: localhost
           DATABASE_URL: postgresql://root@localhost/circle_test?sslmode=disable
