@@ -293,7 +293,7 @@ tests = ["pytest (<4.0)", "pytest-django", "pytest-flakes (==1.0.1)", "pytest-pe
 
 [[package]]
 name = "django-defender"
-version = "0.9.1"
+version = "0.9.5"
 description = "redis based Django app that locks out users after too many failed login attempts."
 category = "main"
 optional = false
@@ -1176,7 +1176,7 @@ gunicorn = ["gunicorn"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.9"
-content-hash = "6cd79d69b025af8b2fc8e521da6267ba4d16adf855ca417f5e4fd91678a43b31"
+content-hash = "7f27033d297fea24023ebb2f4ad8fe1789273f15a535a033003afc083835c352"
 
 [metadata.files]
 asgiref = [
@@ -1415,8 +1415,8 @@ django-csp = [
     {file = "django_csp-3.7.tar.gz", hash = "sha256:01eda02ad3f10261c74131cdc0b5a6a62b7c7ad4fd017fbefb7a14776e0a9727"},
 ]
 django-defender = [
-    {file = "django-defender-0.9.1.tar.gz", hash = "sha256:5828729c77eb07f0d7aea1e757b092cdc13a5858b21b100f6fbab7ccbfd3bdb1"},
-    {file = "django_defender-0.9.1-py3-none-any.whl", hash = "sha256:a3301ee86e774c9079aaa06aa3fd8c9c2c48667af944cf0a6d233d88e6bde175"},
+    {file = "django-defender-0.9.5.tar.gz", hash = "sha256:cd6aa47648d2107a8a944bcbb0ece82edb34aa8be0131e768574488f46620d14"},
+    {file = "django_defender-0.9.5-py3-none-any.whl", hash = "sha256:c636069c608fa59533858c447bb8738dfbe4f41264cfc499cebc29bb684565a3"},
 ]
 django-extensions = [
     {file = "django-extensions-2.2.9.tar.gz", hash = "sha256:2f81b618ba4d1b0e58603e25012e5c74f88a4b706e0022a3b21f24f0322a6ce6"},
