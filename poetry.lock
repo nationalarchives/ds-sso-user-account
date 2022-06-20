@@ -316,16 +316,16 @@ six = ">=1.2"
 
 [[package]]
 name = "django-pattern-library"
-version = "0.5.0"
+version = "0.7.0"
 description = "A module for Django that allows to build pattern libraries for your projects."
 category = "main"
 optional = false
-python-versions = ">=3.6,<4.0"
+python-versions = ">=3.7,<4.0"
 
 [package.dependencies]
-Django = ">=2.2,<4.0"
+Django = ">=2.2,<4.1"
 Markdown = ">=3.1,<4.0"
-PyYAML = ">=5.1,<6.0"
+PyYAML = ">=5.1,<7.0"
 
 [[package]]
 name = "django-redis"
@@ -1179,7 +1179,7 @@ gunicorn = ["gunicorn"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.9"
-content-hash = "a0cb922eeca76842270a6b86346b1385d5deb60cfcbfd9a275043d525b0ca076"
+content-hash = "d17acd888e8fcb5415c316cf8a81e5e5b48c795b09c36389f8a29797b10b385a"
 
 [metadata.files]
 asgiref = [
@@ -1426,8 +1426,8 @@ django-extensions = [
     {file = "django_extensions-2.2.9-py2.py3-none-any.whl", hash = "sha256:b19182d101a441fe001c5753553a901e2ef3ff60e8fbbe38881eb4a61fdd17c4"},
 ]
 django-pattern-library = [
-    {file = "django-pattern-library-0.5.0.tar.gz", hash = "sha256:25210194de8fe4c0c2a969e7ffbcea81efad19a7ac843bd67d28d39e26568545"},
-    {file = "django_pattern_library-0.5.0-py3-none-any.whl", hash = "sha256:bd387f104652c26ce05e7d3cd884d134819c7757c0caa1107a3be3a05eda552d"},
+    {file = "django-pattern-library-0.7.0.tar.gz", hash = "sha256:e9e69da272bfe151d84f32878940858c0b62bca499023c7caf6a2ed38b9e1135"},
+    {file = "django_pattern_library-0.7.0-py3-none-any.whl", hash = "sha256:aea6e659c5c8f335b2d1357261fc05c6c0dcef4bc54fb38cb58b621e9ae932e7"},
 ]
 django-redis = [
     {file = "django-redis-5.2.0.tar.gz", hash = "sha256:8a99e5582c79f894168f5865c52bd921213253b7fd64d16733ae4591564465de"},
