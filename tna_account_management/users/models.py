@@ -11,6 +11,7 @@ class User(AbstractUser):
     auth0_id = models.CharField(max_length=36, blank=True, null=True, unique=True)
     email_verified = models.BooleanField(default=False)
     profile_override = models.JSONField(
+        null=True,
         blank=True,
         default=None,
         help_text="When set, self.profile will return this value instead of fetching real profile data from Auth0.",

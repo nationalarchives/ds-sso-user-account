@@ -1,0 +1,18 @@
+{% extends "patterns/base.html" %}
+
+{% load static %}
+
+{% block content %}
+<div class="u-layout">
+    <h1>{{title}}</h1>
+    <p>Hello, {{user.first_name}}</p>
+    <ul>
+        <li>Your name: {{user.name}}</li>
+        <li>Your address: {{user.address}}</li>
+    </ul>
+    <p><a href="{% url 'update_details' %}">Update your details</a></p>
+    {% if not user.email_verified %}
+        <p><a href="{% url 'verify_email' %}">Verify your email</a></p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,4 +1,4 @@
-{% extends "patterns/base_page.html" %}
+{% extends "patterns/base.html" %}
 {% load crispy_forms_tags %}
 
 {% comment %}
@@ -10,16 +10,14 @@ when this is set to smooth
 {% block content %}
     <div class="u-layout">
 
-        <h1>{{ page.title }}</h1>
-        {% if page.introduction %}
-            <p>{{ page.introduction }}</p>
+        <h1>{{ title }}</h1>
+        {% if introduction %}
+            <p>{{ introduction }}</p>
         {% endif %}
 
         {% if form %}
             {% crispy form %}
         {% endif %}
-
-        {% include "patterns/molecules/share/share.html" %}
 
     </div>
 {% endblock %}

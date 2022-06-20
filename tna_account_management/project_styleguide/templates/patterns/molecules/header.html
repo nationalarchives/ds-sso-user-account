@@ -1,0 +1,25 @@
+{% load static %}
+
+{% include 'patterns/molecules/login-status.html' %}
+
+<header class="header">
+    <div class="header__logo-holder">
+      <a href="/" class="header__logo-link"
+        ><img
+          src="{% static 'images/tna-blk-logo-beta.svg' %}"
+          class="header__logo-image"
+          alt="The National Archives logo"
+      /></a>
+    </div>
+
+    <nav class="header__nav" aria-label="Site menu">
+      <ul class="header__nav-list">
+          <li class="header__nav-list-item">
+              <a class="header__nav-list-item-link" href="/test1" aria-current="true">dummy nav item </a>
+          </li>
+          <li class="header__nav-list-item">
+            <a class="header__nav-list-item-link" href="/test2" aria-current="true">dummy nav item </a>
+        </li>
+      </ul>
+    </nav>
+  </header>

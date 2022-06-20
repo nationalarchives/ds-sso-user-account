@@ -14,10 +14,10 @@ def login(request):
 
 def logout(request):
     if request.method != "POST":
-        return render(request, "patterns/auth/logout_confirm.html")
+        return render(request, "patterns/pages/auth/logout_confirm.html")
     auth_logout(request)
     return redirect(settings.LOGOUT_REDIRECT_URL)
 
 
 def logout_success(request):
-    return render(request, "patterns/auth/logout_success.html")
+    return render(request, "patterns/pages/auth/logout_success.html")
