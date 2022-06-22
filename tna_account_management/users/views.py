@@ -2,24 +2,40 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import FormView, TemplateView
 
 
-class AccountDashboardView(LoginRequiredMixin, TemplateView):
-    template_name = "patterns/pages/user/dashboard.html"
+class CommonContextMixin:
+    title = ""
+    main_heading = ""
+
+    def get_title(self):
+        return self.title
+
+    def get_main_heading(self):
+        return self.main_heading or self.get_title()
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user = self.request.user
-        context['title'] = 'Manage your account'
-        context['user'] = user
-        return context
+        return super().get_context_data(
+            title=self.get_title(),
+            main_heading=self.get_main_heading(),
+            user=self.request.user,
+            **kwargs
+        )
 
 
-class VerifyEmailView(LoginRequiredMixin, TemplateView):
+class AccountDashboardView(LoginRequiredMixin, CommonContextMixin, TemplateView):
+    title = "Manage your account"
+    template_name = "patterns/pages/user/dashboard.html"
+
+
+class VerifyEmailView(LoginRequiredMixin, CommonContextMixin, TemplateView):
+    title = "Verify your email address"
     template_name = "patterns/pages/user/verify_email.html"
 
 
-class UpdateDetailsView(LoginRequiredMixin, FormView):
+class UpdateDetailsView(LoginRequiredMixin, CommonContextMixin, FormView):
+    title = "Update your details"
     template_name = "patterns/pages/user/update_details.html"
 
 
-class ChangePasswordView(LoginRequiredMixin, FormView):
+class ChangePasswordView(LoginRequiredMixin, CommonContextMixin, FormView):
+    title = "Change your password"
     template_name = "patterns/pages/user/change_password.html"
