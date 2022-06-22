@@ -7,7 +7,7 @@ from tna_account_management.utils import auth0
 
 
 class User(AbstractUser):
-    name = models.TextField(max_length=400)
+    name = models.TextField(max_length=400, blank=True)
     auth0_id = models.CharField(max_length=36, blank=True, null=True, unique=True)
     email_verified = models.BooleanField(default=False)
     profile_override = models.JSONField(
@@ -31,7 +31,7 @@ class User(AbstractUser):
         return username
 
     def get_full_name(self) -> str:
-        return self.name
+        return self.name or self.username
 
     @cached_property
     def name_segments(self) -> str:
@@ -39,7 +39,9 @@ class User(AbstractUser):
 
     @property
     def first_name(self) -> str:
-        return self.name_segments[0]
+        if self.name:
+            return self.name_segments[0]
+        return self.username
 
     @property
     def last_name(self) -> str:
