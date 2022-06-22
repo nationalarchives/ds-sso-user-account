@@ -8,16 +8,7 @@ when this is set to smooth
 {% block html_class %}no-scroll-behaviour{% endblock %}
 
 {% block content %}
-    <div class="u-layout">
-
-        <h1>{{ title }}</h1>
-        {% if introduction %}
-            <p>{{ introduction }}</p>
-        {% endif %}
-
-        {% if form %}
-            {% crispy form %}
-        {% endif %}
-
-    </div>
+    {% if form %}
+        {% crispy form %}
+    {% endif %}
 {% endblock %}

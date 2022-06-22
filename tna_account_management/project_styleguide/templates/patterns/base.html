@@ -48,7 +48,13 @@
 
         {% block main %}
             <main id="maincontent">
-                {% block content %}{% endblock %}
+                <div class="u-layout">
+
+                    <h1>{{ main_heading }}</h1>
+
+                    {% block content %}{% endblock %}
+
+                </div>
             </main>
         {% endblock %}
 
