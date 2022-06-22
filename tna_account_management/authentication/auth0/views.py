@@ -7,7 +7,6 @@ from django.contrib.auth import logout as auth_logout
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.utils import timezone
 
 from authlib.integrations.django_client import OAuth
 
@@ -48,31 +47,42 @@ def authorize(request):
     token = oauth.auth0.authorize_access_token(request)
     user_info = token["userinfo"]
     auth0_id = user_info.get("user_id") or user_info.get("sub")
+    email = user_info["email"]
+    name = user_info.get("name", "")
+    if name.lower() == email.lower():
+        name = ""
 
     try:
         # First, try to find an existing user
         user = User.objects.get(auth0_id=auth0_id)
+
         # Update user details to reflect profile
         user.__dict__.update(
-            email=user_info["email"],
-            name=user_info.get("name", ""),
-            username=User.get_unique_username(user_info["nickname"], exclude_pk=user.pk),
-            email_verified=user_info["email_verified"]
+            email=email,
+            name=name,
+            username=User.get_unique_username(
+                user_info["nickname"], exclude_pk=user.pk
+            ),
+            email_verified=user_info["email_verified"],
         )
         user.save()
     except User.DoesNotExist:
         # If no Django user was found, create a new one with a unique username
         user = User(
             auth0_id=auth0_id,
-            email=user_info["email"],
-            name=user_info.get("name", ""),
+            email=email,
+            name=name,
             username=User.get_unique_username(user_info.get("nickname")),
-            email_verified=user_info.get("email_verified", False)
+            email_verified=user_info.get("email_verified", False),
         )
         user.set_unusable_password()
         user.save()
 
-    auth_login(request, user, backend="tna_account_management.authentication.auth0.backend.Auth0Backend")
+    auth_login(
+        request,
+        user,
+        backend="tna_account_management.authentication.auth0.backend.Auth0Backend",
+    )
     return HttpResponseRedirect(success_url)
 
 
