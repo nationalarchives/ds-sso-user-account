@@ -55,7 +55,7 @@ class User(AbstractUser):
         if self.profile_override is not None:
             return self.profile_override
         if self.auth0_id:
-            return auth0.users_client.get(id=self.auth_id)
+            return auth0.users_client.get(id=self.auth0_id)
         return {}
 
     @property
