@@ -50,8 +50,6 @@
             <main id="maincontent">
                 <div class="u-layout">
 
-                    <h1>{{ main_heading }}</h1>
-
                     {% block messages %}
                         {% for message in messages %}
                             <div class="alert-{{ message.tags }}" role="alert">
@@ -59,6 +57,8 @@
                             </div>
                         {% endfor %}
                     {% endblock %}
+
+                    <h1>{{ main_heading }}</h1>
 
                     {% block content %}{% endblock %}
 
