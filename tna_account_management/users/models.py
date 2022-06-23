@@ -10,6 +10,7 @@ class User(AbstractUser):
     name = models.TextField(max_length=400, blank=True)
     auth0_id = models.CharField(max_length=36, blank=True, null=True, unique=True)
     email_verified = models.BooleanField(default=False)
+    is_social = models.BooleanField(default=False)
     profile_override = models.JSONField(
         null=True,
         blank=True,

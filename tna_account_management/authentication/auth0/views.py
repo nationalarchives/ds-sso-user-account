@@ -46,7 +46,9 @@ def authorize(request):
 
     token = oauth.auth0.authorize_access_token(request)
     user_info = token["userinfo"]
-    auth0_id = user_info.get("user_id") or user_info.get("sub")
+
+    auth0_id = user_info.get("sub")
+    is_social = not auth0_id.startswith("auth0|")
     email = user_info["email"]
     name = user_info.get("name", "")
     if name.lower() == email.lower():
@@ -63,6 +65,7 @@ def authorize(request):
             username=User.get_unique_username(
                 user_info["nickname"], exclude_pk=user.pk
             ),
+            is_social=is_social,
             email_verified=user_info["email_verified"],
         )
         user.save()
@@ -73,6 +76,7 @@ def authorize(request):
             email=email,
             name=name,
             username=User.get_unique_username(user_info.get("nickname")),
+            is_social=is_social,
             email_verified=user_info.get("email_verified", False),
         )
         user.set_unusable_password()
