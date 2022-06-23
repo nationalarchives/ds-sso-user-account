@@ -6,8 +6,29 @@ from django.utils.functional import cached_property
 import requests
 
 from auth0.v3.authentication import GetToken
+from auth0.v3.exceptions import Auth0Error
 from auth0.v3.management import Users, Roles
 from auth0.v3.rest import RestClient
+
+
+def check_credentials(username: str, password: str):
+    get_token = GetToken(settings.AUTH0_DOMAIN)
+    try:
+        get_token.login(
+            client_id=settings.AUTH0_CLIENT_ID,
+            client_secret=settings.AUTH0_CLIENT_SECRET,
+            audience=f"https://{settings.AUTH0_DOMAIN}/api/v2/",
+            username=username,
+            password=password,
+            scope="read:users_app_metadata",
+            realm=settings.AUTH0_AUTHENTICATION_REALM,
+        )
+    except Auth0Error as e:
+        if e.status == 403:
+            return False
+        raise e
+    else:
+        return True
 
 
 class TokenGeneratingRestClient(RestClient):
