@@ -52,6 +52,14 @@
 
                     <h1>{{ main_heading }}</h1>
 
+                    {% block messages %}
+                        {% for message in messages %}
+                            <div class="alert-{{ message.tags }}" role="alert">
+                                {{ message | safe }}
+                            </div>
+                        {% endfor %}
+                    {% endblock %}
+
                     {% block content %}{% endblock %}
 
                 </div>
