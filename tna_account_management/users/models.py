@@ -261,7 +261,9 @@ class User(AbstractUser):
                 self.username = new_username
                 changed_fields.append("username")
 
-        if changed_fields:
+        if self._state.adding:
+            self.save()
+        elif changed_fields:
             self.save(update_fields=changed_fields)
 
         # clear cached_property value
