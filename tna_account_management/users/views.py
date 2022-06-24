@@ -46,6 +46,11 @@ class AccountDashboardView(LoginRequiredMixin, CommonContextMixin, TemplateView)
     title = "Manage your account"
     template_name = "patterns/pages/user/dashboard.html"
 
+    def get(self, request):
+        # Ensure user fields reflect live details before loading
+        request.user.update_from_profile()
+        return super().get(request)
+
 
 class VerifyEmailView(LoginRequiredMixin, CommonContextMixin, FormView):
     title = "Verify your email address"
