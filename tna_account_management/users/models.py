@@ -1,9 +1,119 @@
-from typing import Any, Dict, Sequence
+import re
+from dataclasses import dataclass
+from typing import Any, Dict, List, Union
 
+from django.conf import settings
 from django.db import models
+from django.db import transaction
 from django.contrib.auth.models import AbstractUser
 from django.utils.functional import cached_property
 from tna_account_management.utils import auth0
+
+
+@dataclass
+class Address:
+    house_name_no: str
+    street: str
+    town: str
+    country: str
+    postcode: str
+    id: int = 1
+    address_type: int = 1
+    county: str = ""
+    recipient_name: str = ""
+    title: str = ""
+    first_name: str = ""
+    last_name: str = ""
+    telephone: str = ""
+
+    @classmethod
+    def from_auth0_json(cls, data: Dict[str, Union[str,int]]):
+        kwargs = {
+            "id": data.get("Id", 1),
+            "address_type": data.get("AddressType", 1),
+            "telephone": data.get("Telephone", "").strip(),
+            "title": data.get("Title", "").strip(),
+            "first_name": data.get("Firstname", "").strip(),
+            "last_name": data.get("Lastname", "").strip(),
+            "recipient_name": data.get("RecipientName", "").strip(),
+            "house_name_no": data.get("HouseNameNo", "").strip(),
+            "street": data.get("Street", "").strip(),
+            "town": data.get("Town", "").strip(),
+            "county": data.get("County", "").strip(),
+            "country": data.get("Country", "").strip(),
+            "postcode": data.get("Postcode", "").strip(),
+        }
+        return cls(**kwargs)
+
+    def to_auth0_json(self):
+        return {
+            "Id": self.id,
+            "AddressType": self.address_type,
+            "RecipientName": self.name,
+            "Title": self.title,
+            "Firstname": self.first_name,
+            "Lastname": self.last_name,
+            "Telephone": self.telephone,
+            "HouseNameNo": self.house_name_no,
+            "Street": self.street,
+            "Town": self.town,
+            "County": self.county,
+            "Postcode": self.postcode,
+            "Country": self.country,
+        }
+
+    @property
+    def name(self):
+        # use new, combined value if available
+        if self.recipient_name:
+            return self.recipient_name
+        # combine separate name values into one
+        name_bits = []
+        if self.title:
+            name_bits.append(self.title)
+        if self.first_name:
+            name_bits.append(self.first_name)
+        if self.last_name:
+            name_bits.append(self.last_name)
+        return " ".join(name_bits)
+
+    @staticmethod
+    def looks_like_house_number(value: str) -> bool:
+        return bool(re.match(r"^[0-9]+\s{0,2}[a-zA-z]{0,2}$", value))
+
+    @property
+    def lines(self) -> List[str]:
+        lines = [self.name]
+        if self.looks_like_house_number(self.house_name_no):
+            lines.append(f"{self.house_name_no} {self.street}")
+        else:
+            lines.append(self.house_name_no)
+            lines.append(self.street)
+        lines.append(self.town)
+        if self.county:
+            lines.append(self.county)
+        lines.append(self.country)
+        lines.append(self.postcode)
+        if self.telephone:
+            lines.append(f"Tel: {self.telephone}")
+        return lines
+
+    def get_form_data(self):
+        return {
+            "recipient_name": self.name,
+            "house_name_no": self.house_name_no,
+            "street": self.street,
+            "town": self.town,
+            "county": self.county,
+            "country": self.country,
+            "postcode": self.postcode,
+            "telephone": self.telephone,
+        }
+
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
 
 
 class User(AbstractUser):
@@ -59,18 +169,54 @@ class User(AbstractUser):
             return auth0.users_client.get(id=self.auth0_id)
         return {}
 
-    @property
-    def addresses(self) -> Sequence[Dict[str, Any]]:
-        return self.profile.get("addresses", ())
+    def check_password(self, raw_password: str) -> bool:
+        if self.has_usable_password:
+            return super().check_password()
+        try:
+            return auth0.check_credentials(self.email, raw_password)
+        except Exception:
+            False
 
-    def set_email_verified_status(self) -> None:
-        changed = False
-        value_from_profile = self.profile.get("email_verified")
-        if not self.email_verified and value_from_profile:
-            self.email_verified = True
-            changed = True
-        elif self.email_verified and value_from_profile is False:
-            self.email_verified = False
-            changed = True
-        if changed:
-            self.save(update_fields=["email_verified"])
+    @transaction.atomic
+    def update_name(self, new_name: str) -> None:
+        if new_name == self.name:
+            return None
+        self.name = new_name
+        self.save(update_fields=["name"])
+        if self.auth0_id:
+            auth0.users_client.update(self.auth0_id, {"name": new_name})
+
+    @transaction.atomic
+    def update_email(self, new_email: str):
+        # Assume the new email is not verified (if actually changing).
+        # Auth0 can tell us otherwise the next time they log in
+        self.email_verified = new_email.lower() == self.email.lower()
+        self.email = new_email
+        self.save(update_fields=["email", "email_verified"])
+        if self.auth0_id:
+            auth0.users_client.update(self.auth0_id, {"email": self.email})
+
+    def update_address(self, data: Dict[str, str]):
+        if not self.auth0_id:
+            return None
+        if self.address is None:
+            self.address = Address()
+        self.address.update(**data)
+        auth0.users_client.update(self.auth0_id, {
+            "user_metadata": {"addresses": [self.address.to_json()]}
+        })
+
+    def delete_address(self):
+        if not self.auth0_id or not self.address:
+            return None
+        auth0.users_client.update(self.auth0_id, {
+            "user_metadata": {"addresses": []}
+        })
+
+    @cached_property
+    def address(self) -> Union[Address, None]:
+        addresses = self.profile.get("user_metadata", {}).get("addresses", ())
+        try:
+            return Address.from_auth0_json(addresses[0])
+        except IndexError:
+            return None

@@ -3,16 +3,40 @@
 {% load static %}
 
 {% block content %}
-<div class="u-layout">
-    <h1>{{title}}</h1>
-    <p>Hello, {{user.first_name}}</p>
     <ul>
-        <li>Your name: {{user.name}}</li>
-        <li>Your address: {{user.address}}</li>
+        <li>
+            <b>Your name</b>: {{user.name|default:"Not provided"}}
+            {% if not user.is_social %}
+                <a href="{% url 'update_name' %}">Update your name</a>
+            {% endif %}
+        </li>
+        <li>
+            <b>Your email</b>: {{user.email}}
+            {% if user.email_verified %}
+                (verified)
+            {% else %}
+                <a href="{% url 'verify_email' %}">Verify your email</a>
+            {% endif %}
+            {% if not user.is_social %}
+                <a href="{% url "change_email" %}">Change your email</a>
+            {% endif %}
+        </li>
+        {% if not user.is_social %}
+            <li>
+                <b>Your password</b>: ********
+                <a href="{% url "change_password" %}">Change your password</a>
+            </li>
+        {% endif %}
+        <li>
+            <b>Your address</b>:
+            {% if not user.address %}
+                Not provided
+            {% else %}
+                {% for line in user.address_lines %}
+                    {{ line }}{% if not forloop.last %}<br/>{% endif %}
+                {% endfor %}
+            {% endif %}
+            <a href="{% url 'update_address' %}">Update your address</a>
+        </li>
     </ul>
-    <p><a href="{% url 'update_details' %}">Update your details</a></p>
-    {% if not user.email_verified %}
-        <p><a href="{% url 'verify_email' %}">Verify your email</a></p>
-    {% endif %}
-</div>
 {% endblock %}
