@@ -46,41 +46,18 @@ def authorize(request):
 
     token = oauth.auth0.authorize_access_token(request)
     user_info = token["userinfo"]
-
     auth0_id = user_info.get("sub")
-    is_social = not auth0_id.startswith("auth0|")
-    email = user_info["email"]
-    name = user_info.get("name", "")
-    if name.lower() == email.lower():
-        name = ""
 
     try:
         # First, try to find an existing user
         user = User.objects.get(auth0_id=auth0_id)
-
-        # Update user details to reflect profile
-        user.__dict__.update(
-            email=email,
-            name=name,
-            username=User.get_unique_username(
-                user_info["nickname"], exclude_pk=user.pk
-            ),
-            is_social=is_social,
-            email_verified=user_info["email_verified"],
-        )
-        user.save()
     except User.DoesNotExist:
-        # If no Django user was found, create a new one with a unique username
-        user = User(
-            auth0_id=auth0_id,
-            email=email,
-            name=name,
-            username=User.get_unique_username(user_info.get("nickname")),
-            is_social=is_social,
-            email_verified=user_info.get("email_verified", False),
-        )
+        # Create a new user
+        user = User(auth0_id=auth0_id, is_social=not auth0_id.startswith("auth0|"))
         user.set_unusable_password()
-        user.save()
+
+    # Ensure details are up-to-date
+    user.update_from_profile()
 
     auth_login(
         request,
