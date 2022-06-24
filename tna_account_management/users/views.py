@@ -47,10 +47,34 @@ class AccountDashboardView(LoginRequiredMixin, CommonContextMixin, TemplateView)
     template_name = "patterns/pages/user/dashboard.html"
 
 
-class VerifyEmailView(LoginRequiredMixin, CommonContextMixin, TemplateView):
+class VerifyEmailView(LoginRequiredMixin, CommonContextMixin, FormView):
     title = "Verify your email address"
+    form_class = forms.VerifyEmailForm
     template_name = "patterns/pages/user/verify_email.html"
     success_url = reverse_lazy("dashboard")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update(
+            {'user_email': self.request.user.email,}
+        )
+        return kwargs
+
+    def form_valid(self, form):
+        user = self.request.user
+        try:
+           user.resend_verification_email()
+        except Exception:
+            logger.exception(f"Failed to send verification email.")
+            form.add_error(
+                None,
+                f"Failed to send verification email to {user.email}. Please wait a moment, then try again.",
+            )
+            return self.form_invalid(form)
+        messages.success(
+            self.request, "An email will be sent to you shortly."
+        )
+        return super().form_valid(form)
 
 
 class UpdateNameView(NonSocialLoginRequiredMixin, CommonContextMixin, FormView):

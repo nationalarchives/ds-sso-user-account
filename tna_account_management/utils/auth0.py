@@ -7,7 +7,7 @@ import requests
 
 from auth0.v3.authentication import GetToken
 from auth0.v3.exceptions import Auth0Error
-from auth0.v3.management import Users, Roles
+from auth0.v3.management import Users, Roles, Jobs
 from auth0.v3.rest import RestClient
 
 
@@ -170,6 +170,24 @@ class TokenGeneratingRolesClient(TokenGeneratingClient, Roles):
     pass
 
 
+class TokenGeneratingJobsClient(TokenGeneratingClient, Jobs):
+    """
+    A custom version of the `Jobs` client that lazily generates
+    a jwt token when needed and automatically refreshes it and retries
+    if it receives a "401: Invalid token" response from Auth0.
+    """
+
+    # Make the 'body' arg optional and just accept user_id instead so we
+    # don't have to manually compose the body elsewhere.
+    def send_verification_email(self, body=None, user_id=None):
+        if (body is None) and user_id:
+            body = {"user_id": user_id, "client_id": settings.AUTH0_CLIENT_ID}
+
+        super().send_verification_email(body)
+
+
 users_client = TokenGeneratingUsersClient(domain=getattr(settings, "AUTH0_DOMAIN", ""))
 
 roles_client = TokenGeneratingRolesClient(domain=getattr(settings, "AUTH0_DOMAIN", ""))
+
+jobs_client = TokenGeneratingJobsClient(domain=getattr(settings, "AUTH0_DOMAIN", ""))

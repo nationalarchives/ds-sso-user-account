@@ -177,6 +177,9 @@ class User(AbstractUser):
         except Exception:
             False
 
+    def resend_verification_email(self):
+        auth0.jobs_client.send_verification_email(user_id=self.auth0_id)
+
     @transaction.atomic
     def update_name(self, new_name: str) -> None:
         if new_name == self.name:

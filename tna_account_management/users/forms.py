@@ -5,6 +5,24 @@ from tbxforms.forms import BaseForm as HelperMixin
 from tbxforms.layout import Button
 
 
+class VerifyEmailForm(HelperMixin, forms.Form):
+    def __init__(self, *args, **kwargs):
+        self.user_email = kwargs.pop("user_email", None)
+        super().__init__(*args, **kwargs)
+
+    @property
+    def helper(self):
+        fh = super().helper
+        fh.layout.extend([
+            Button.primary(
+                name="submit",
+                type="submit",
+                value=f"Resend email to {self.user_email}",
+            ),
+        ])
+        return fh
+
+
 class NameForm(HelperMixin, forms.Form):
     name = forms.CharField(max_length=200, required=False)
 
@@ -19,6 +37,7 @@ class NameForm(HelperMixin, forms.Form):
             ),
         ])
         return fh
+
 
 class AddressForm(HelperMixin, forms.Form):
     recipient_name = forms.CharField(max_length=255, help_text="For example: Mr John Smith")
