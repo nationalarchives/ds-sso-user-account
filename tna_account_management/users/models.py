@@ -223,3 +223,48 @@ class User(AbstractUser):
             return Address.from_auth0_json(addresses[0])
         except IndexError:
             return None
+
+    def update_from_profile(self) -> List[str]:
+        """
+        Updates this user's `email`, `name`, `email_verified` and `username`
+        values to reflect the latest available profile data, and saves the
+        changes to the database.
+
+        Returns a list containing the names of any fields that were updated.
+        """
+        changed_fields = []
+
+        profile = self.profile
+        email = profile.get("email", "")
+        name = profile.get("name", "")
+        email_verified = profile.get("email_verified", False)
+        nickname = profile.get("nickname")
+
+        if name.lower() == email.lower():
+            name = ""
+
+        if not self.email or self.email != email:
+            self.email = email
+            changed_fields.append("email")
+
+        if not self.name or self.name != name:
+            self.name = name
+            changed_fields.append("name")
+
+        if not self.email_verified and email_verified:
+            self.email_verified = True
+            changed_fields.append("email_verified")
+
+        if nickname and (not self.username or 'email' in changed_fields):
+            new_username = self.get_unique_username(nickname, self.pk)
+            if self.username != new_username:
+                self.username = new_username
+                changed_fields.append("username")
+
+        if changed_fields:
+            self.save(update_fields=changed_fields)
+
+        # clear cached_property value
+        self.__dict__.pop("address", None)
+
+        return changed_fields
