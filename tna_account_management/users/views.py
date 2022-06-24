@@ -58,6 +58,14 @@ class VerifyEmailView(LoginRequiredMixin, CommonContextMixin, FormView):
     template_name = "patterns/pages/user/verify_email.html"
     success_url = reverse_lazy("dashboard")
 
+    def get(self, request):
+        # Ensure user fields reflect live details
+        request.user.update_from_profile()
+        # Redirect to dashboard if email already verified
+        if request.user.email_verified:
+            return redirect(self.success_url)
+        return super().get(request)
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs.update(
