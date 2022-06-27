@@ -169,11 +169,17 @@ class User(AbstractUser):
             return auth0.users_client.get(id=self.auth0_id)
         return {}
 
+    @property
+    def auth0_connection(self) -> Union[str, None]:
+        for item in self.profile.get("identities", ()):
+            if not item.get("isSocial", True):
+                return item.get("connection")
+
     def check_password(self, raw_password: str) -> bool:
         if self.has_usable_password():
             return super().check_password(raw_password)
         try:
-            return auth0.check_credentials(self.email, raw_password)
+            return auth0.check_credentials(self.email, raw_password, self.auth0_connection)
         except Exception:
             False
 
