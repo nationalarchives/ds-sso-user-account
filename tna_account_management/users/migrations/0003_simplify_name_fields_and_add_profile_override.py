@@ -29,6 +29,7 @@ class Migration(migrations.Migration):
             name="profile_override",
             field=models.JSONField(
                 blank=True,
+                null=True,
                 default=None,
                 help_text="When set, user.profile will return this value instead of fetching a value from Auth0.",
             ),
