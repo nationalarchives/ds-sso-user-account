@@ -170,7 +170,7 @@ class User(AbstractUser):
         return {}
 
     def check_password(self, raw_password: str) -> bool:
-        if self.has_usable_password:
+        if self.has_usable_password():
             return super().check_password(raw_password)
         try:
             return auth0.check_credentials(self.email, raw_password)
