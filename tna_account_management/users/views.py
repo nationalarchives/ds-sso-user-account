@@ -186,5 +186,29 @@ class ChangeEmailView(NonSocialLoginRequiredMixin, CommonContextMixin, FormView)
 
 class ChangePasswordView(NonSocialLoginRequiredMixin, CommonContextMixin, FormView):
     title = "Change your password"
+    form_class = forms.ChangePasswordForm
     template_name = "patterns/pages/user/change_password.html"
     success_url = reverse_lazy("dashboard")
+
+    def form_valid(self, form):
+        user = self.request.user
+        
+        if not user.check_password(form.cleaned_data["existing_password"]):
+            form.add_error("existing_password", "The password you entered was invalid.")
+            return self.form_invalid(form)
+
+        try:
+            user.update_password(form.cleaned_data["password"])
+        except Exception:
+            logger.exception("Failed to save password change to Auth0")
+            form.add_error(
+                None,
+                "Failed to save your new password. Please wait a moment, then try again.",
+            )
+            return self.form_invalid(form)
+
+        # log the user out - they must log back in with their new password
+        auth_logout(self.request)
+
+        # redirect to login view
+        return super().form_valid(form)

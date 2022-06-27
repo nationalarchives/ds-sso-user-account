@@ -24,7 +24,7 @@ def check_credentials(username: str, password: str):
             realm=settings.AUTH0_AUTHENTICATION_REALM,
         )
     except Auth0Error as e:
-        if e.status == 403:
+        if e.status_code == 403:
             return False
         raise e
     else:

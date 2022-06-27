@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
 from tbxforms.forms import BaseForm as HelperMixin
@@ -90,6 +91,40 @@ class EmailForm(HelperMixin, forms.Form):
                 name="submit",
                 type="submit",
                 value="Save and exit",
+            ),
+        ])
+        return fh
+
+
+class ChangePasswordForm(HelperMixin, forms.Form):
+    password = forms.CharField(label="A secure password", help_text="A minimum of 8 characters including an uppercase character and a symbol.", widget=forms.PasswordInput(), validators=[validate_password])
+    confirm_password = forms.CharField(label="Confirm secure password", widget=forms.PasswordInput())
+    existing_password = forms.CharField(label="Enter your existing password", widget=forms.PasswordInput())
+
+    def clean_password(self):
+        password = self.cleaned_data.get("password")
+        if password:
+            validate_password(password)
+        return password
+
+    def clean_confirm_password(self):
+        password1 = self.cleaned_data.get("password")
+        password2 = self.cleaned_data.get("confirm_password")
+        if password1 and password2 and password1 != password2:
+            raise ValidationError(
+                "The two passwords did not match.",
+                code="password_mismatch",
+            )
+        return password2
+
+    @property
+    def helper(self):
+        fh = super().helper
+        fh.layout.extend([
+            Button.primary(
+                name="submit",
+                type="submit",
+                value="Change your password",
             ),
         ])
         return fh
