@@ -11,7 +11,7 @@ from auth0.v3.management import Users, Roles, Jobs
 from auth0.v3.rest import RestClient
 
 
-def check_credentials(username: str, password: str, realm: str = settings.AUTH0_AUTHENTICATION_REALM):
+def check_credentials(username: str, password: str, realm: str = None):
     get_token = GetToken(settings.AUTH0_DOMAIN)
     try:
         get_token.login(
@@ -21,7 +21,7 @@ def check_credentials(username: str, password: str, realm: str = settings.AUTH0_
             username=username,
             password=password,
             scope="read:users_app_metadata",
-            realm=realm,
+            realm=realm or settings.AUTH0_AUTHENTICATION_REALM,
         )
     except Auth0Error as e:
         if e.status_code == 403:
