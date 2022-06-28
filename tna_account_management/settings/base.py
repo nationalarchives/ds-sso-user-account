@@ -586,7 +586,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 AUTH_USER_MODEL = "users.User"
 LOGIN_URL = "/auth/login/"
-LOGOUT_REDIRECT_URL = "auth/logout/success/"
+LOGOUT_REDIRECT_URL = "/auth/logout/success/"
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
