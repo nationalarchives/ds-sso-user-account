@@ -20,26 +20,47 @@ FRONTEND = os.getenv("FRONTEND", "docker")
 PROJECT_DIR = "/app"
 LOCAL_DUMP_DIR = "database_dumps"
 
-# PRODUCTION_APP_INSTANCE = "tna_account_management-production"
-# STAGING_APP_INSTANCE = "tna_account_management-staging"
 DEVELOPMENT_APP_INSTANCE = "tna-account-management-poc"
 
 LOCAL_MEDIA_DIR = "media"
-LOCAL_IMAGES_DIR = LOCAL_MEDIA_DIR + "/original_images"
 LOCAL_DATABASE_NAME = PROJECT_NAME = "tna_account_management"
 LOCAL_DATABASE_USERNAME = "tna_account_management"
 
 
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
+
+def container_exec(cmd, container_name="web", check_returncode=False):
+    result = subprocess.run(
+        ["docker-compose", "exec", "-T", container_name, "bash", "-c", cmd]
+    )
+    if check_returncode:
+        result.check_returncode()
+    return result
+
+
+def db_exec(cmd, check_returncode=False):
+    "Execute something in the 'db' Docker container."
+    return container_exec(cmd, "db", check_returncode)
+
+
+def web_exec(cmd, check_returncode=False):
+    "Execute something in the 'web' Docker container."
+    return container_exec(cmd, "web", check_returncode)
+
+
+@task
+def run_management_command(c, cmd, check_returncode=False):
+    """
+    Run a Django management command in the 'web' Docker container
+    with access to Django and other Python dependencies.
+    """
+    return web_exec(f"poetry run python manage.py {cmd}", check_returncode)
+
 ############
 # Production
 ############
-
-
-def dexec(cmd, service="web"):
-    return local(
-        "docker-compose exec -T {} bash -c {}".format(quote(service), quote(cmd))
-    )
-
 
 @task
 def build(c):
@@ -59,24 +80,27 @@ def build(c):
 
 
 @task
-def start(c):
+def start(c, container_name=None):
     """
-    Start the development environment
+    Start the local development environment.
     """
-    if FRONTEND == "local":
-        local("docker-compose up -d")
-    else:
-        local(
-            "docker-compose -f docker-compose.yml -f docker/docker-compose-frontend.yml up -d"
-        )
+    cmd = "docker-compose"
+    if container_name:
+        cmd += f" up {container_name} -d"
+    elif FRONTEND != "local":
+        cmd += f" -f docker-compose.yml -f docker/docker-compose-frontend.yml up -d"
+    local(cmd)
 
 
 @task
-def stop(c):
+def stop(c, container_name=None):
     """
     Stop the development environment
     """
-    local("docker-compose stop")
+    cmd = "docker-compose stop"
+    if container_name:
+        cmd += f" {container_name}"
+    local(cmd)
 
 
 @task
@@ -123,22 +147,12 @@ def psql(c, command=None):
     subprocess.run(cmd_list)
 
 
-# TODO check the rest of these work correctly from here down
-
-
-@task
-def delete_docker_database(c, local_database_name=LOCAL_DATABASE_NAME):
-    dexec(
-        "dropdb --if-exists --host db --username={project_name} {database_name}".format(
-            project_name=PROJECT_NAME, database_name=LOCAL_DATABASE_NAME
-        ),
-        "db",
+def delete_db(c):
+    db_exec(
+        f"dropdb --if-exists --host db --username={LOCAL_DATABASE_USERNAME} {LOCAL_DATABASE_NAME}"
     )
-    dexec(
-        "createdb --host db --username={project_name} {database_name}".format(
-            project_name=PROJECT_NAME, database_name=LOCAL_DATABASE_NAME
-        ),
-        "db",
+    db_exec(
+        f"createdb --host db --username={LOCAL_DATABASE_USERNAME} {LOCAL_DATABASE_NAME}"
     )
 
 
@@ -148,9 +162,8 @@ def import_data(c, database_filename):
     Import local data file to the db container.
     """
     # Copy the data file to the db container
-    delete_docker_database(c)
     # Import the database file to the db container
-    dexec(
+    db_exec(
         "pg_restore --clean --no-acl --if-exists --no-owner --host db \
             --username={project_name} -d {database_name} {database_filename}".format(
             project_name=PROJECT_NAME,
@@ -159,89 +172,52 @@ def import_data(c, database_filename):
         ),
         service="db",
     )
+    delete_db(c)
     print(
         "Any superuser accounts you previously created locally will have been wiped and will need to be recreated."
     )
 
 
-def delete_local_renditions(c, local_database_name=LOCAL_DATABASE_NAME):
-    psql(c, "DELETE FROM images_rendition;")
+def db_dump(c, filename):
+    """Snapshot the database, files will be stored in the db container"""
+    if not filename.endswith(".psql"):
+        filename += ".psql"
+    db_exec(
+        f"pg_dump -d {LOCAL_DATABASE_NAME} -U {LOCAL_DATABASE_USERNAME} > {filename}"
+    )
+    print(f"Database dumped to: {filename}")
 
 
-#########
-# Production
-#########
+@task
+def db_restore(c, filename, delete_dump_on_success=False, delete_dump_on_error=False):
+    """Restore the database from a snapshot in the db container"""
+    print("Stopping 'web' to sever DB connection")
+    stop(c, "web")
+    if not filename.endswith(".psql"):
+        filename += ".psql"
+    delete_db(c)
 
+    try:
+        print(f"Restoring datbase from: {filename}")
+        db_exec(
+            f"psql -d {LOCAL_DATABASE_NAME} -U {LOCAL_DATABASE_USERNAME} < {filename}",
+            check_returncode=True,
+        )
+    except subprocess.CalledProcessError:
+        if delete_dump_on_error:
+            db_exec(f"rm {filename}")
+        raise
 
-# @task
-# def pull_production_media(c):
-#     """Pull media from production AWS S3"""
-#     pull_media_from_s3_heroku(c, PRODUCTION_APP_INSTANCE)
+    if delete_dump_on_success:
+        print(f"Deleting dump file: {filename}")
+        db_exec(f"rm {filename}")
 
-
-# @task
-# def pull_production_images(c):
-#     """Pull images from production AWS S3"""
-#     pull_images_from_s3_heroku(c, PRODUCTION_APP_INSTANCE)
-
-
-# @task
-# def pull_production_data(c):
-#     """Pull database from production Heroku Postgres"""
-#     pull_database_from_heroku(c, PRODUCTION_APP_INSTANCE)
-
-
-# @task
-# def production_shell(c):
-#     """Spin up a one-time Heroku production dyno and connect to shell"""
-#     open_heroku_shell(c, PRODUCTION_APP_INSTANCE)
-
-
-#########
-# Staging
-#########
-
-
-# @task
-# def pull_staging_media(c):
-#     """Pull media from staging AWS S3"""
-#     pull_media_from_s3_heroku(c, STAGING_APP_INSTANCE)
-
-
-# @task
-# def pull_staging_images(c):
-#     """Pull images from staging AWS S3"""
-#     pull_images_from_s3_heroku(c, STAGING_APP_INSTANCE)
-
-
-# @task
-# def pull_staging_data(c):
-#     """Pull database from staging Heroku Postgres"""
-#     pull_database_from_heroku(c, STAGING_APP_INSTANCE)
-
-
-# @task
-# def staging_shell(c):
-#     """Spin up a one-time Heroku staging dyno and connect to shell"""
-#     open_heroku_shell(c, STAGING_APP_INSTANCE)
+    start(c, "web")
 
 
 #############
 # Development
 #############
-
-
-@task
-def pull_dev_media(c):
-    """Pull media from development AWS S3"""
-    pull_media_from_s3_heroku(c, DEVELOPMENT_APP_INSTANCE)
-
-
-@task
-def pull_dev_images(c):
-    """Pull images from development AWS S3"""
-    pull_images_from_s3_heroku(c, DEVELOPMENT_APP_INSTANCE)
-
 
 @task
 def pull_dev_data(c):
@@ -257,88 +233,13 @@ def dev_shell(c):
 
 def delete_local_database(c, local_database_name=LOCAL_DATABASE_NAME):
     local(
-        "dropdb --if-exists {database_name}".format(database_name=LOCAL_DATABASE_NAME)
+        "dropdb --if-exists {database_name}".format(database_name=local_database_name)
     )
-
-
-####
-# S3
-####
-
-
-def aws(c, command, aws_access_key_id, aws_secret_access_key):
-    return local(
-        "AWS_ACCESS_KEY_ID={access_key_id} AWS_SECRET_ACCESS_KEY={secret_key} "
-        "aws {command}".format(
-            access_key_id=aws_access_key_id,
-            secret_key=aws_secret_access_key,
-            command=command,
-        )
-    )
-
-
-def pull_media_from_s3(
-    c,
-    aws_access_key_id,
-    aws_secret_access_key,
-    aws_storage_bucket_name,
-    local_media_dir=LOCAL_MEDIA_DIR,
-):
-    aws_cmd = "s3 sync --delete s3://{bucket_name} {local_media}".format(
-        bucket_name=aws_storage_bucket_name,
-        local_media=local_media_dir,
-    )
-    aws(c, aws_cmd, aws_access_key_id, aws_secret_access_key)
-
-
-def pull_images_from_s3_heroku(c, app_instance):
-    aws_access_key_id = get_heroku_variable(c, app_instance, "AWS_ACCESS_KEY_ID")
-    aws_secret_access_key = get_heroku_variable(
-        c, app_instance, "AWS_SECRET_ACCESS_KEY"
-    )
-    aws_storage_bucket_name = get_heroku_variable(
-        c, app_instance, "AWS_STORAGE_BUCKET_NAME"
-    )
-    pull_images_from_s3(
-        c, aws_access_key_id, aws_secret_access_key, aws_storage_bucket_name
-    )
-
-
-def pull_images_from_s3(
-    c,
-    aws_access_key_id,
-    aws_secret_access_key,
-    aws_storage_bucket_name,
-    local_images_dir=LOCAL_IMAGES_DIR,
-):
-    aws_cmd = (
-        "s3 sync --delete s3://{bucket_name}/original_images {local_media}".format(
-            bucket_name=aws_storage_bucket_name, local_media=local_images_dir
-        )
-    )
-    aws(c, aws_cmd, aws_access_key_id, aws_secret_access_key)
-    # The above command just syncs the original images, so we need to drop the wagtailimages_renditions
-    # table so that the renditions will be re-created when requested on the local build.
-    delete_local_renditions(c)
 
 
 ########
 # Heroku
 ########
-
-
-def pull_media_from_s3_heroku(c, app_instance):
-    aws_access_key_id = get_heroku_variable(c, app_instance, "AWS_ACCESS_KEY_ID")
-    aws_secret_access_key = get_heroku_variable(
-        c, app_instance, "AWS_SECRET_ACCESS_KEY"
-    )
-    aws_storage_bucket_name = get_heroku_variable(
-        c, app_instance, "AWS_STORAGE_BUCKET_NAME"
-    )
-    pull_media_from_s3(
-        c, aws_access_key_id, aws_secret_access_key, aws_storage_bucket_name
-    )
-
 
 def pull_database_from_heroku(c, app_instance):
     datestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -375,72 +276,71 @@ def open_heroku_shell(c, app_instance, shell_command="bash"):
 # Utils
 #######
 
-
-def make_bold(msg):
-    return "\033[1m{}\033[0m".format(msg)
-
-
-@task
-def dellar_snapshot(c, filename):
-    """Snapshot the database, files will be stored in the db container"""
-    dexec(
-        "pg_dump -d {database_name} -U {database_username} > {filename}.psql".format(
-            database_name=LOCAL_DATABASE_NAME,
-            database_username=LOCAL_DATABASE_USERNAME,
-            filename=filename,
-        ),
-        service="db",
-    ),
-    print("Database snapshot created")
-
-
-@task
-def dellar_restore(c, filename):
-    """Restore the database from a snapshot in the db container"""
-    delete_docker_database(c)
-
-    dexec(
-        "psql -U {database_username} -d {database_name} < {filename}.psql".format(
-            database_name=LOCAL_DATABASE_NAME,
-            database_username=LOCAL_DATABASE_USERNAME,
-            filename=filename,
-        ),
-        service="db",
-    ),
-    print("Database restored.")
-
-
-@task
-def docker_coverage(c):
-    return dexec(
-        "coverage erase && coverage run manage.py test \
-            --settings=tna_account_management.settings.test && coverage report",
+def delete_db(c):
+    db_exec(
+        f"dropdb --if-exists --host db --username={LOCAL_DATABASE_USERNAME} {LOCAL_DATABASE_NAME}"
+    )
+    db_exec(
+        f"createdb --host db --username={LOCAL_DATABASE_USERNAME} {LOCAL_DATABASE_NAME}"
     )
 
 
-def get_heroku_variable(c, app_instance, variable):
-    return local(
-        "heroku config:get {var} --app {app}".format(app=app_instance, var=variable)
-    ).stdout.strip()
+@task
+def db_dump(c, filename):
+    """Snapshot the database, files will be stored in the db container"""
+    if not filename.endswith(".psql"):
+        filename += ".psql"
+    db_exec(
+        f"pg_dump -d {LOCAL_DATABASE_NAME} -U {LOCAL_DATABASE_USERNAME} > {filename}"
+    )
+    print(f"Database dumped to: {filename}")
 
 
 @task
-def run_test(c):
+def db_restore(c, filename, delete_dump_on_success=False, delete_dump_on_error=False):
+    """Restore the database from a snapshot in the db container"""
+    print("Stopping 'web' to sever DB connection")
+    stop(c, "web")
+    if not filename.endswith(".psql"):
+        filename += ".psql"
+    delete_db(c)
+
+    try:
+        print(f"Restoring datbase from: {filename}")
+        db_exec(
+            f"psql -d {LOCAL_DATABASE_NAME} -U {LOCAL_DATABASE_USERNAME} < {filename}",
+            check_returncode=True,
+        )
+    except subprocess.CalledProcessError:
+        if delete_dump_on_error:
+            db_exec(f"rm {filename}")
+        raise
+
+    if delete_dump_on_success:
+        print(f"Deleting dump file: {filename}")
+        db_exec(f"rm {filename}")
+
+    start(c, "web")
+
+
+@task
+def test(c, lint=False, parallel=False):
     """
     Run python tests in the web container
     """
-    subprocess.call(
-        [
-            "docker-compose",
-            "exec",
-            "web",
-            "python",
-            "manage.py",
-            "test",
-            "--settings=tna_account_management.settings.test",
-            "--parallel",
-        ]
-    )
+    start(c, "web")
+    if lint:
+        print("Checking isort compliance...")
+        web_exec("isort tna_account_management config --check --diff")
+        print("Checking Black compliance...")
+        web_exec("black tna_account_management config --check --diff --color --fast")
+        print("Checking flake8 compliance...")
+        web_exec("flake8 tna_account_management config")
+        print("Running Django tests...")
+    cmd = "python manage.py test --settings=tna_account_management.settings.test"
+    if parallel:
+        cmd += " --parallel"
+    web_exec(cmd)
 
 
 @task
