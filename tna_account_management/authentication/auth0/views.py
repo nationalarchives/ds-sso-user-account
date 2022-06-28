@@ -40,9 +40,9 @@ def authorize(request):
     if success_url := request.session.get("login_success_url"):
         parsed = urlparse(success_url)
         if parsed.netloc and parsed.netloc != request.META.get("HTTP_HOST"):
-            success_url = "/"
+            success_url = settings.LOGIN_REDIRECT_URL
     else:
-        success_url = "/"
+        success_url = settings.LOGIN_REDIRECT_URL
 
     token = oauth.auth0.authorize_access_token(request)
     user_info = token["userinfo"]
