@@ -178,10 +178,7 @@ class User(AbstractUser):
     def check_password(self, raw_password: str) -> bool:
         if self.has_usable_password():
             return super().check_password(raw_password)
-        try:
-            return auth0.check_credentials(self.email, raw_password, self.auth0_connection)
-        except Exception:
-            False
+        return auth0.check_credentials(self.email, raw_password, self.auth0_connection)
 
     def resend_verification_email(self):
         auth0.jobs_client.send_verification_email(user_id=self.auth0_id)
