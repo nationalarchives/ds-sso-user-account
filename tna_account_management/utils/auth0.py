@@ -20,7 +20,7 @@ def check_credentials(username: str, password: str, realm: str = None):
             audience=f"https://{settings.AUTH0_DOMAIN}/api/v2/",
             username=username,
             password=password,
-            scope="read:users_app_metadata",
+            scope="",
             realm=realm or settings.AUTH0_AUTHENTICATION_REALM,
         )
     except Auth0Error as e:
