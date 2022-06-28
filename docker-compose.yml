@@ -12,10 +12,7 @@ services:
       DATABASE_URL: postgres://tna_account_management:tna_account_management@db:5432/tna_account_management # pragma: allowlist secret
       DJANGO_SETTINGS_MODULE: tna_account_management.settings.dev
       MEDIA_DIR: /app/media/
-      RECAPTCHA_PRIVATE_KEY: UPDATE_THIS # pragma: allowlist secret
-      RECAPTCHA_PUBLIC_KEY: UPDATE_THIS
       REDIS_URL: redis://redis
-      ENABLE_DJANGO_DEFENDER: 'false'
       SECRET_KEY: local_dev_secret_key
       SECURE_SSL_REDIRECT: 'false'
       STATIC_DIR: /app/static/

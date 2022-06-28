@@ -3,9 +3,14 @@ Django settings for tna_account_management project.
 """
 import os
 import sys
+from distutils.util import strtobool
 
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
+
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.utils import get_default_release
 
 env = os.environ.copy()
 
@@ -42,15 +47,6 @@ if "ALLOWED_HOSTS" in env:
 # Application definition
 
 INSTALLED_APPS = [
-    # This is an app that we use for the performance monitoring.
-    # You set configure it by setting the following environment variables:
-    #  * SCOUT_MONITOR="True"
-    #  * SCOUT_KEY="paste api key here"
-    #  * SCOUT_NAME="tna_account_management"
-    # https://intranet.torchbox.com/delivering-projects/tech/scoutapp/
-    # According to the official docs, it's important that Scout is listed
-    # first - http://help.apm.scoutapp.com/#django.
-    "scout_apm.django",
     "crispy_forms",
     "tbxforms",
     "tna_account_management.users",
@@ -387,46 +383,23 @@ if "SERVER_EMAIL" in env:
 
 
 # Sentry configuration.
-# See instructions on the intranet:
-# https://intranet.torchbox.com/delivering-projects/tech/starting-new-project/#sentry
-is_in_shell = len(sys.argv) > 1 and sys.argv[1] in ["shell", "shell_plus"]
+SENTRY_DEBUG_URL_ENABLED = False
+if SENTRY_DSN := env.get("SENTRY_DSN", ""):
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=env.get("SENTRY_ENVIRONMENT", ""),
+        release=get_default_release(),
+        integrations=[DjangoIntegration()],
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for performance monitoring.
+        # We recommend adjusting this value in production.
+        traces_sample_rate=float(env.get("SENTRY_SAMPLE_RATE", "0.5")),
+        # If you wish to associate users to errors (assuming you are using
+        # django.contrib.auth) you may enable sending PII data.
+        send_default_pii=strtobool(env.get("SENTRY_SEND_USER_DATA", "false")),
+    )
 
-if "SENTRY_DSN" in env and not is_in_shell:
-
-    import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
-    from sentry_sdk.utils import get_default_release
-
-    sentry_kwargs = {
-        "dsn": env["SENTRY_DSN"],
-        "integrations": [DjangoIntegration()],
-    }
-
-    # There's a chooser to toggle between environments at the top right corner on sentry.io
-    # Values are typically 'staging' or 'production' but can be set to anything else if needed.
-    # dokku config:set gosh SENTRY_ENVIRONMENT=staging
-    # heroku config:set SENTRY_ENVIRONMENT=production
-    if "SENTRY_ENVIRONMENT" in env:
-        sentry_kwargs.update({"environment": env["SENTRY_ENVIRONMENT"]})
-
-    release = get_default_release()
-    if release is None:
-        try:
-            # But if it's not, we assume that the commit hash is available in
-            # the GIT_REV environment variable. It's a default environment
-            # variable used on Dokku:
-            # http://dokku.viewdocs.io/dokku/deployment/methods/git/#configuring-the-git_rev-environment-variable
-            release = env["GIT_REV"]
-        except KeyError:
-            try:
-                # Assume this is a Heroku-hosted app with the "runtime-dyno-metadata" lab enabled
-                release = env["HEROKU_RELEASE_VERSION"]
-            except KeyError:
-                # If there's no commit hash, we do not set a specific release.
-                release = None
-
-    sentry_kwargs.update({"release": release})
-    sentry_sdk.init(**sentry_kwargs)
+    SENTRY_DEBUG_URL_ENABLED = strtobool(env.get("SENTRY_DEBUG_URL_ENABLED", "false"))
 
 # Set s-max-age header that is used by reverse proxy/front end cache. See
 # urls.py.
@@ -442,11 +415,6 @@ CACHE_CONTROL_STALE_WHILE_REVALIDATE = int(
     env.get("CACHE_CONTROL_STALE_WHILE_REVALIDATE", 30)
 )
 
-
-# Required to get e.g. wagtail-sharing working on Heroku and probably many other platforms.
-# https://docs.djangoproject.com/en/stable/ref/settings/#use-x-forwarded-port
-USE_X_FORWARDED_PORT = env.get("USE_X_FORWARDED_PORT", "true").lower().strip() == "true"
-
 # Security configuration
 # This configuration is required to achieve good security rating.
 # You can test it using https://securityheaders.com/
@@ -456,11 +424,6 @@ USE_X_FORWARDED_PORT = env.get("USE_X_FORWARDED_PORT", "true").lower().strip() =
 # especially large Wagtail pages with many fields, we need to override this. See
 # https://docs.djangoproject.com/en/3.2/ref/settings/#data-upload-max-number-fields
 DATA_UPLOAD_MAX_NUMBER_FIELDS = int(env.get("DATA_UPLOAD_MAX_NUMBER_FIELDS", 1000))
-
-# Enabling this doesn't have any benefits but will make it harder to make
-# requests from javascript because the csrf cookie won't be easily accessible.
-# https://docs.djangoproject.com/en/stable/ref/settings/#csrf-cookie-httponly
-# CSRF_COOKIE_HTTPONLY = True
 
 # Force HTTPS redirect (enabled by default!)
 # https://docs.djangoproject.com/en/stable/ref/settings/#secure-ssl-redirect
@@ -492,95 +455,8 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = False
 # https://docs.djangoproject.com/en/stable/ref/settings/#secure-browser-xss-filter
 SECURE_BROWSER_XSS_FILTER = True
 
-
 # https://docs.djangoproject.com/en/stable/ref/settings/#secure-content-type-nosniff
 SECURE_CONTENT_TYPE_NOSNIFF = True
-
-
-# Content Security policy settings
-# http://django-csp.readthedocs.io/en/latest/configuration.html
-if "CSP_DEFAULT_SRC" in env:
-    MIDDLEWARE.append("csp.middleware.CSPMiddleware")
-
-    # The “special” source values of 'self', 'unsafe-inline', 'unsafe-eval', and 'none' must be quoted!
-    # e.g.: CSP_DEFAULT_SRC = "'self'" Without quotes they will not work as intended.
-
-    CSP_DEFAULT_SRC = env.get("CSP_DEFAULT_SRC").split(",")
-    if "CSP_SCRIPT_SRC" in env:
-        CSP_SCRIPT_SRC = env.get("CSP_SCRIPT_SRC").split(",")
-    if "CSP_STYLE_SRC" in env:
-        CSP_STYLE_SRC = env.get("CSP_STYLE_SRC").split(",")
-    if "CSP_IMG_SRC" in env:
-        CSP_IMG_SRC = env.get("CSP_IMG_SRC").split(",")
-    if "CSP_CONNECT_SRC" in env:
-        CSP_CONNECT_SRC = env.get("CSP_CONNECT_SRC").split(",")
-    if "CSP_FONT_SRC" in env:
-        CSP_FONT_SRC = env.get("CSP_FONT_SRC").split(",")
-    if "CSP_BASE_URI" in env:
-        CSP_BASE_URI = env.get("CSP_BASE_URI").split(",")
-    if "CSP_OBJECT_SRC" in env:
-        CSP_OBJECT_SRC = env.get("CSP_OBJECT_SRC").split(",")
-
-
-# Referrer-policy header settings.
-# https://django-referrer-policy.readthedocs.io/en/1.0/
-
-REFERRER_POLICY = env.get(
-    "SECURE_REFERRER_POLICY", "no-referrer-when-downgrade"
-).strip()
-
-# Recaptcha
-# These settings are required for the captcha challange to work.
-# https://github.com/springload/wagtail-django-recaptcha
-
-if "RECAPTCHA_PUBLIC_KEY" in env and "RECAPTCHA_PRIVATE_KEY" in env:
-    NOCAPTCHA = True
-    RECAPTCHA_PUBLIC_KEY = env["RECAPTCHA_PUBLIC_KEY"]
-    RECAPTCHA_PRIVATE_KEY = env["RECAPTCHA_PRIVATE_KEY"]
-
-
-# Basic authentication settings
-# These are settings to configure the third-party library:
-# https://gitlab.com/tmkn/django-basic-auth-ip-whitelist
-if env.get("BASIC_AUTH_ENABLED", "false").lower().strip() == "true":
-    # Insert basic auth as a first middleware to be checked first, before
-    # anything else.
-    MIDDLEWARE.insert(0, "baipw.middleware.BasicAuthIPWhitelistMiddleware")
-
-    # This is the credentials users will have to use to access the site.
-    BASIC_AUTH_LOGIN = env.get("BASIC_AUTH_LOGIN", "tbx")
-    BASIC_AUTH_PASSWORD = env.get("BASIC_AUTH_PASSWORD", "tbx")
-
-    # Wagtail requires Authorization header to be present for the previews
-    BASIC_AUTH_DISABLE_CONSUMING_AUTHORIZATION_HEADER = True
-
-    # This is the list of network IP addresses that are allowed in without
-    # basic authentication check.
-    BASIC_AUTH_WHITELISTED_IP_NETWORKS = [
-        # Torchbox networks.
-        # https://projects.torchbox.com/projects/sysadmin/notebook/IP%20addresses%20to%20whitelist
-        "78.32.251.192/28",
-        "89.197.53.244/30",
-        "193.227.244.0/23",
-        "2001:41c8:103::/48",
-    ]
-
-    # This is the list of hosts that website can be accessed without basic auth
-    # check. This may be useful to e.g. white-list "llamasavers.com" but not
-    # "llamasavers.production.torchbox.com".
-    if "BASIC_AUTH_WHITELISTED_HTTP_HOSTS" in env:
-        BASIC_AUTH_WHITELISTED_HTTP_HOSTS = env[
-            "BASIC_AUTH_WHITELISTED_HTTP_HOSTS"
-        ].split(",")
-
-
-# Django REST framework settings
-# Change default settings that enable basic auth.
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.SessionAuthentication",
-    )
-}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
@@ -593,35 +469,6 @@ AUTHENTICATION_BACKENDS = [
 ]
 # used by 'tna_account_management.authentication'
 AUTHENTICATION_PROVIDER = "django"
-
-
-# django-defender
-# Records failed login attempts and blocks access by username and IP
-# https://django-defender.readthedocs.io/en/latest/
-ENABLE_DJANGO_DEFENDER = (
-    REDIS_URL and env.get("ENABLE_DJANGO_DEFENDER", "True").lower().strip() == "true"
-)
-
-if ENABLE_DJANGO_DEFENDER:
-    INSTALLED_APPS += ["defender"]
-    MIDDLEWARE.append("defender.middleware.FailedLoginMiddleware")
-
-    # See https://django-defender.readthedocs.io/en/latest/#customizing-django-defender
-    # Use same Redis client as cache
-    DEFENDER_REDIS_NAME = "default"
-    DEFENDER_LOGIN_FAILURE_LIMIT_IP = 20
-    DEFENDER_LOGIN_FAILURE_LIMIT_USERNAME = 5
-    DEFENDER_COOLOFF_TIME = int(
-        env.get("DJANGO_DEFENDER_COOLOFF_TIME", 600)
-    )  # default to 10 minutes
-    DEFENDER_LOCKOUT_TEMPLATE = "patterns/pages/defender/lockout.html"
-
-
-PASSWORD_REQUIRED_TEMPLATE = "patterns/pages/wagtail/password_required.html"
-
-
-# Default size of the pagination used on the front-end.
-DEFAULT_PER_PAGE = 20
 
 # Styleguide
 PATTERN_LIBRARY_ENABLED = env.get("PATTERN_LIBRARY_ENABLED", "false").lower() == "true"
@@ -666,9 +513,9 @@ TBXFORMS_ALLOW_HTML_BUTTON = False
 
 # Auth0 configuration
 # -----------------------------------------------------------------------------
-AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
-AUTH0_CLIENT_ID = os.getenv("AUTH0_CLIENT_ID")
-AUTH0_CLIENT_SECRET = os.getenv("AUTH0_CLIENT_SECRET")
+AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
+AUTH0_CLIENT_ID = env.get("AUTH0_CLIENT_ID")
+AUTH0_CLIENT_SECRET = env.get("AUTH0_CLIENT_SECRET")
 if AUTH0_DOMAIN:
     AUTHENTICATION_PROVIDER = "auth0"
     AUTHENTICATION_BACKENDS.append("tna_account_management.authentication.auth0.backend.Auth0Backend")

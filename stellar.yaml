@@ -1,6 +1,0 @@
-logging: 30
-migrate_from_0_3_2: false
-project_name: tna_account_management
-stellar_url: postgresql+psycopg2:///stellar_data
-tracked_databases: [tna_account_management]
-url: postgresql+psycopg2:///template1

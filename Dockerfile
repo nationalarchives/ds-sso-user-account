@@ -70,7 +70,6 @@ EXPOSE 8000
 
 # Install poetry using the installer (keeps Poetry's dependencies isolated from the app's)
 # chown protects us against cases where files downloaded by poetry have invalid ownership
-# (see https://git.torchbox.com/internal/wagtail-kit/-/merge_requests/682)
 # chmod ensures poetry dependencies are accessible when packages are installed
 RUN wget https://raw.githubusercontent.com/python-poetry/poetry/${POETRY_VERSION}/get-poetry.py && \
     echo "${POETRY_INSTALLER_SHA} get-poetry.py" | sha1sum -c - && \
