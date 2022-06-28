@@ -190,7 +190,7 @@ class User(AbstractUser):
         self.name = new_name
         self.save(update_fields=["name"])
         if self.auth0_id:
-            auth0.users_client.update(self.auth0_id, {"name": new_name})
+            auth0.users_client.update(self.auth0_id, {"name": new_name or self.email})
 
     @transaction.atomic
     def update_email(self, new_email: str):
