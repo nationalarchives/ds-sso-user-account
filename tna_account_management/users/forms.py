@@ -18,7 +18,7 @@ class VerifyEmailForm(HelperMixin, forms.Form):
             Button.primary(
                 name="submit",
                 type="submit",
-                value=f"Resend email to {self.user_email}",
+                value=f"Resend verification email",
             ),
         ])
         return fh
@@ -91,14 +91,14 @@ class EmailForm(HelperMixin, forms.Form):
                 name="submit",
                 type="submit",
                 value="Save and exit",
-            ),
+            )
         ])
         return fh
 
 
 class ChangePasswordForm(HelperMixin, forms.Form):
-    password = forms.CharField(label="A secure password", help_text="A minimum of 8 characters including an uppercase character and a symbol.", widget=forms.PasswordInput(), validators=[validate_password])
-    confirm_password = forms.CharField(label="Confirm secure password", widget=forms.PasswordInput())
+    password = forms.CharField(label="New Password", help_text="A minimum of 8 characters including an uppercase character and a symbol.", widget=forms.PasswordInput(), validators=[validate_password])
+    confirm_password = forms.CharField(label="Confirm new password", widget=forms.PasswordInput())
     existing_password = forms.CharField(label="Enter your existing password", widget=forms.PasswordInput())
 
     def clean_password(self):

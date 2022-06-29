@@ -38,7 +38,7 @@
     </head>
 
     <body class="{% block body_class %}{% endblock %}">
-        <a href="#maincontent" class="skip-to-content-link sr-only sr-only-focusable" data-link="Skip to main content">Skip to main content</a>
+        <a href="#maincontent" class="skip-to-content-link visually-hidden-focusable" data-link="Skip to main content">Skip to main content</a>
 
         {% include 'patterns/molecules/gtm-no-script.html' %}
 
@@ -48,7 +48,7 @@
 
         {% block main %}
             <main id="maincontent">
-                <div class="u-layout">
+                <div class="u-layout container mb-5 mt-5">
 
                     {% block messages %}
                         {% for message in messages %}

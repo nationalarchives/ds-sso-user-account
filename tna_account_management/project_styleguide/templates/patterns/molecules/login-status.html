@@ -1,7 +1,9 @@
-<div class="login-status" role="region" aria-labelledby="authentication_link">
+<div class="login-status me-4 mt-2 mb-2 text-end" role="region" aria-labelledby="authentication_link">
     {% if request.user.is_authenticated %}
-        <a href="{% url 'auth_logout' %}" class="login-status__link" id="authentication_link">Sign out</a>
+        <a href="/" class="login-status__link button button--small text-decoration-underline">My account</a>
+        <a href="{% url 'auth_logout' %}" class="login-status__link button button--small text-decoration-underline" id="authentication_link">Logout</a>
     {% else %}
-        <a href="{% url 'auth_login' %}" class="login-status__link" id="authentication_link">Sign in</a>
+        <a href="{% url 'auth_login' %}" class="login-status__link button button--small text-decoration-underline" id="authentication_link">Login</a>
+        <a href="{% url 'auth_register' %}" class="login-status__link button button--small text-decoration-underline">Register</a>
     {% endif %}
 </div>

@@ -2,63 +2,63 @@
 *,
 *::before,
 *::after {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 // Prevent text size change on orientation change.
 html {
-    font-family: $font--primary;
-    text-size-adjust: 100%;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  font-family: $font--primary;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-    overflow-x: hidden;
-    background-color: $color--background;
-    scroll-behavior: smooth;
+  overflow-x: hidden;
+  background-color: $color--white;
+  scroll-behavior: smooth;
 
-    @media (prefers-reduced-motion: reduce) {
-        scroll-behavior: auto;
-    }
+  @media (prefers-reduced-motion: reduce) {
+    scroll-behavior: auto;
+  }
 
-    &.no-scroll {
-        overflow-y: hidden;
-    }
+  &.no-scroll {
+    overflow-y: hidden;
+  }
 }
 
 // Prevent empty space below images appearing
 img,
 svg {
-    vertical-align: top;
+  vertical-align: top;
 }
 
 // Responsive images
 img {
-    height: auto;
-    max-width: 100%;
+  height: auto;
+  max-width: 100%;
 }
 
 button,
 input,
 select,
 textarea {
-    font-family: inherit;
+  font-family: inherit;
 }
 
 a {
-    color: $color--link;
-    transition: color $transition;
+  color: $color--link;
+  transition: color $transition;
 
-    &:hover {
-        color: $color--primary;
-        cursor: pointer;
-    }
+  &:hover {
+    color: $color--primary;
+    cursor: pointer;
+  }
 }
 
 ul,
 ol {
-    padding: 0;
-    margin: 0;
-    list-style: none;
+  padding: 0;
+  margin: 0;
+  list-style: none;
 }

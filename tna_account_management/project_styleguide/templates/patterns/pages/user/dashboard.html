@@ -3,40 +3,82 @@
 {% load static %}
 
 {% block content %}
-    <ul>
-        <li>
-            <b>Your name</b>: {{user.name|default:"Not provided"}}
+    <dl class="govuk-summary-list govuk-!-margin-bottom-9 col-8">
+        <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">
+                <b>Your name</b>
+            </dt>
+            <dd class="govuk-summary-list__value">
+                {{user.name|default:"Not provided"}}
+            </dd>
             {% if not user.is_social %}
-                <a href="{% url 'update_name' %}">Update your name</a>
+            <dd class="govuk-summary-list__actions">
+                <a class="govuk-link" href="{% url 'update_name' %}">
+                Change<span class="govuk-visually-hidden"> name</span>
+                </a>
+            </dd>
             {% endif %}
-        </li>
-        <li>
-            <b>Your email</b>: {{user.email}}
-            {% if user.email_verified %}
-                (verified)
-            {% else %}
-                <a href="{% url 'verify_email' %}">Verify your email</a>
-            {% endif %}
+        </div>
+            
+        <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">
+                <b>Your email</b>
+            </dt>
+            <dd class="govuk-summary-list__value">
+                {{user.email}} 
+                {% if user.email_verified %}
+                    (verified)
+                {% else %}
+                    <a href="{% url 'verify_email' %}">(Verify your email)</a>
+                {% endif %}
+            </dd>
             {% if not user.is_social %}
-                <a href="{% url "change_email" %}">Change your email</a>
+            <dd class="govuk-summary-list__actions">
+                <a class="govuk-link" href="{% url "change_email" %}">
+                Change<span class="govuk-visually-hidden"> email</span>
+                </a>
+            </dd>
             {% endif %}
-        </li>
+        </div>
+
         {% if not user.is_social %}
-            <li>
-                <b>Your password</b>: ********
-                <a href="{% url "change_password" %}">Change your password</a>
-            </li>
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">
+                    <b>Your password</b>
+                </dt>
+                <dd class="govuk-summary-list__value">
+                    ********
+                </dd>
+                {% if not user.is_social %}
+                <dd class="govuk-summary-list__actions">
+                    <a class="govuk-link" href="{% url "change_password" %}">
+                    Change<span class="govuk-visually-hidden"> your password</span>
+                    </a>
+                </dd>
+                {% endif %}
+            </div>
         {% endif %}
-        <li>
-            <b>Your address</b>:
-            {% if not user.address %}
-                Not provided
-            {% else %}
-                {% for line in user.address_lines %}
-                    {{ line }}{% if not forloop.last %}<br/>{% endif %}
-                {% endfor %}
+
+        <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">
+                <b>Your address</b>
+            </dt>
+            <dd class="govuk-summary-list__value">
+                {% if not user.address %}
+                    Not provided
+                {% else %}
+                    {% for line in user.address_lines %}
+                        {{ line }}{% if not forloop.last %}<br/>{% endif %}
+                    {% endfor %}
+                {% endif %}
+            </dd>
+            {% if not user.is_social %}
+            <dd class="govuk-summary-list__actions">
+                <a class="govuk-link" href="{% url 'update_address' %}">
+                Change<span class="govuk-visually-hidden"> address</span>
+                </a>
+            </dd>
             {% endif %}
-            <a href="{% url 'update_address' %}">Update your address</a>
-        </li>
-    </ul>
+        </div>
+    </dl>
 {% endblock %}
