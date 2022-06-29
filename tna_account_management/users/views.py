@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.views.generic import FormView, TemplateView
 
 from tna_account_management.users import forms
@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 class CommonContextMixin:
     title = ""
     main_heading = ""
+    breadcrumbs_add_self = True
 
     def get_title(self):
         return self.title
@@ -22,10 +23,31 @@ class CommonContextMixin:
     def get_main_heading(self):
         return self.main_heading or self.get_title()
 
+    def get_breadcrumbs(self):
+        items = [
+            {
+                # TODO: dynamic when adding proper 'theme' support,
+                # based on where the user came from
+                "url": "https://auth0-integration-4ckldly-rasrzs7pi6sd4.uk-1.platformsh.site/",
+                "label": "Home",
+            },
+            {
+                "url": reverse("dashboard"),
+                "label": "Manage your account",
+            }
+        ]
+        if self.breadcrumbs_add_self:
+            items.append({
+                "url": self.request.path,
+                "label": self.get_main_heading(),
+            })
+        return items
+
     def get_context_data(self, **kwargs):
         return super().get_context_data(
             title=self.get_title(),
             main_heading=self.get_main_heading(),
+            breadcrumbs=self.get_breadcrumbs(),
             user=self.request.user,
             **kwargs,
         )
@@ -45,6 +67,7 @@ class NonSocialLoginRequiredMixin(LoginRequiredMixin):
 class AccountDashboardView(LoginRequiredMixin, CommonContextMixin, TemplateView):
     title = "Manage your account"
     template_name = "patterns/pages/user/dashboard.html"
+    breadcrumbs_add_self = False
 
     def get(self, request):
         # Ensure user fields reflect live details before loading
@@ -192,7 +215,7 @@ class ChangePasswordView(NonSocialLoginRequiredMixin, CommonContextMixin, FormVi
 
     def form_valid(self, form):
         user = self.request.user
-        
+
         if not user.check_password(form.cleaned_data["existing_password"]):
             form.add_error("existing_password", "The password you entered was invalid.")
             return self.form_invalid(form)

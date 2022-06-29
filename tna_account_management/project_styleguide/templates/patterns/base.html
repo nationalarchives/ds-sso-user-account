@@ -58,6 +58,18 @@
                         {% endfor %}
                     {% endblock %}
 
+                    {% if breadcrumbs %}
+                        <div class="govuk-breadcrumbs">
+                            <ol class="govuk-breadcrumbs__list">
+                                {% for item in breadcrumbs %}
+                                    <li class="govuk-breadcrumbs__list-item">
+                                        <a class="govuk-breadcrumbs__link" href="{{ item.url }}">{{ item.label }}</a>
+                                    </li>
+                                {% endfor %}
+                            </ol>
+                        </div>
+                    {% endif %}
+
                     <h1>{% block main_heading %}{{ main_heading }}{% endblock %}</h1>
 
                     {% block content %}{% endblock %}
