@@ -3,6 +3,10 @@ from .base import *  # noqa
 # Debugging to be enabled locally only
 DEBUG = True
 
+DEBUG_TOOLBAR_ENABLED = strtobool(  # noqa: F405
+    env.get("DEBUG_TOOLBAR_ENABLED", "True")  # noqa: F405
+)
+
 # Set the cache backend for development
 CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
@@ -40,16 +44,6 @@ SECURE_SSL_REDIRECT = False
 # For the same reason the HSTS header should not be sent.
 SECURE_HSTS_SECONDS = 0
 
-
-# Adds Django Debug Toolbar, if preset
-try:
-    import debug_toolbar  # noqa
-
-    INSTALLED_APPS.append("debug_toolbar")  # noqa
-    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")  # noqa
-except ImportError:
-    pass
-
 # django-crispy-forms
 # https://github.com/django-crispy-forms/django-crispy-forms
 # -----------------------------------------------------------------------------
@@ -61,3 +55,21 @@ try:
     from .local import *  # noqa
 except ImportError:
     pass
+
+
+def show_toolbar(request):
+    return True
+
+
+# Adds Django Debug Toolbar, if preset
+if DEBUG_TOOLBAR_ENABLED:
+    try:
+        import debug_toolbar  # noqa
+    except ImportError:
+        pass
+    else:
+        INSTALLED_APPS.append("debug_toolbar")  # noqa
+        MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")  # noqa
+        DEBUG_TOOLBAR_CONFIG = {
+            "SHOW_TOOLBAR_CALLBACK": show_toolbar,
+        }

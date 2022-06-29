@@ -13,11 +13,32 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.apps import apps
+from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("auth/", include("tna_account_management.authentication.urls")),
-    path('', include("tna_account_management.users.urls")),
 ]
+
+
+def trigger_error(request):
+    # Raise a ZeroDivisionError
+    return 1 / 0
+
+
+if settings.SENTRY_DEBUG_URL_ENABLED:
+    # url is toggled via the SENTRY_DEBUG_URL_ENABLED .env var
+    urlpatterns.append(path("sentry-debug/", trigger_error))
+
+
+if apps.is_installed("debug_toolbar"):
+    urlpatterns = [
+        path("__debug__/", include("debug_toolbar.urls")),
+    ] + urlpatterns
+
+
+urlpatterns.append(path("", include("tna_account_management.users.urls")))

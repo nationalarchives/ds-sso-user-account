@@ -35,6 +35,12 @@ def login(request):
         request, request.build_absolute_uri(callback_url)
     )
 
+def register(request):
+    callback_url = reverse("auth_authorize")
+    return oauth.auth0.signup_redirect(
+        request, request.build_absolute_url(callback_url)
+    )
+
 
 def authorize(request):
     if success_url := request.session.get("login_success_url"):
