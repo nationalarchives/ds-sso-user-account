@@ -77,8 +77,6 @@ def authorize(request):
 
 
 def logout(request):
-    if request.method != "POST":
-        return render(request, "patterns/pages/auth/logout_confirm.html")
     auth_logout(request)
     return redirect(
         f"https://{settings.AUTH0_DOMAIN}/v2/logout?"
