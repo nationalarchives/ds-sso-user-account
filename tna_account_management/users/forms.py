@@ -3,7 +3,10 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
 from tbxforms.forms import BaseForm as HelperMixin
-from tbxforms.layout import Button
+from tbxforms.layout import Button, HTML
+
+
+CANCEL_LINK = HTML('<a href="/" class="cancel-action">Cancel</a>')
 
 
 class VerifyEmailForm(HelperMixin, forms.Form):
@@ -36,6 +39,7 @@ class NameForm(HelperMixin, forms.Form):
                 type="submit",
                 value="Save changes",
             ),
+            CANCEL_LINK,
         ])
         return fh
 
@@ -64,6 +68,7 @@ class AddressForm(HelperMixin, forms.Form):
                 type="submit",
                 value="Delete address",
             ),
+            CANCEL_LINK,
         ])
         return fh
 
@@ -91,7 +96,8 @@ class EmailForm(HelperMixin, forms.Form):
                 name="submit",
                 type="submit",
                 value="Save and exit",
-            )
+            ),
+            CANCEL_LINK,
         ])
         return fh
 
@@ -126,5 +132,6 @@ class ChangePasswordForm(HelperMixin, forms.Form):
                 type="submit",
                 value="Change your password",
             ),
+            CANCEL_LINK,
         ])
         return fh
