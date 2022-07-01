@@ -1,11 +1,11 @@
 from urllib.parse import urlparse
 
 from django.conf import settings
+from django.contrib.auth import login as auth_login
+from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth import logout as auth_logout, login as auth_login
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-
 from tbxforms.forms import BaseForm as HelperMixin
 from tbxforms.layout import Button
 

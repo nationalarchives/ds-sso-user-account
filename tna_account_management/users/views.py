@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse, reverse_lazy
 from django.views.generic import FormView, TemplateView
 
 from tna_account_management.users import forms
@@ -34,13 +34,15 @@ class CommonContextMixin:
             {
                 "url": reverse("dashboard"),
                 "label": "Manage your account",
-            }
+            },
         ]
         if self.breadcrumbs_add_self:
-            items.append({
-                "url": self.request.path,
-                "label": self.get_main_heading(),
-            })
+            items.append(
+                {
+                    "url": self.request.path,
+                    "label": self.get_main_heading(),
+                }
+            )
         return items
 
     def get_context_data(self, **kwargs):
@@ -52,6 +54,7 @@ class CommonContextMixin:
             **kwargs,
         )
 
+
 class NonSocialLoginRequiredMixin(LoginRequiredMixin):
     social_user_redirect_url = reverse_lazy("dashboard")
 
@@ -59,7 +62,10 @@ class NonSocialLoginRequiredMixin(LoginRequiredMixin):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
         if request.user.is_social:
-            messages.success(request, "Sorry, this information is automatically updated to match your social profile, and cannot be updated here.")
+            messages.success(
+                request,
+                "Sorry, this information is automatically updated to match your social profile, and cannot be updated here.",
+            )
             return redirect(str(self.social_user_redirect_url))
         return super().dispatch(request, *args, **kwargs)
 
@@ -85,14 +91,16 @@ class VerifyEmailView(LoginRequiredMixin, CommonContextMixin, FormView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs.update(
-            {'user_email': self.request.user.email,}
+            {
+                "user_email": self.request.user.email,
+            }
         )
         return kwargs
 
     def form_valid(self, form):
         user = self.request.user
         try:
-           user.resend_verification_email()
+            user.resend_verification_email()
         except Exception:
             logger.exception(f"Failed to send verification email.")
             form.add_error(
@@ -100,9 +108,7 @@ class VerifyEmailView(LoginRequiredMixin, CommonContextMixin, FormView):
                 f"Failed to send verification email to {user.email}. Please wait a moment, then try again.",
             )
             return self.form_invalid(form)
-        messages.success(
-            self.request, "An email will be sent to you shortly."
-        )
+        messages.success(self.request, "An email will be sent to you shortly.")
         return super().form_valid(form)
 
 
@@ -120,7 +126,7 @@ class UpdateNameView(NonSocialLoginRequiredMixin, CommonContextMixin, FormView):
     def form_valid(self, form):
         user = self.request.user
         try:
-           user.update_name(form.cleaned_data["name"])
+            user.update_name(form.cleaned_data["name"])
         except Exception:
             logger.exception("Failed to save changes to Auth0")
             form.add_error(
@@ -128,9 +134,7 @@ class UpdateNameView(NonSocialLoginRequiredMixin, CommonContextMixin, FormView):
                 "Failed to save changes. Please wait a moment, then try again.",
             )
             return self.form_invalid(form)
-        messages.success(
-            self.request, "Your name was changed successfully."
-        )
+        messages.success(self.request, "Your name was changed successfully.")
         return super().form_valid(form)
 
 
@@ -162,9 +166,7 @@ class UpdateAddressView(LoginRequiredMixin, CommonContextMixin, FormView):
             )
             return self.form_invalid(form)
 
-        messages.success(
-            self.request, "Your address was changed successfully."
-        )
+        messages.success(self.request, "Your address was changed successfully.")
         return super().form_valid(form)
 
 

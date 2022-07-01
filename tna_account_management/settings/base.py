@@ -6,9 +6,8 @@ import sys
 from distutils.util import strtobool
 
 import dj_database_url
-from django.core.exceptions import ImproperlyConfigured
-
 import sentry_sdk
+from django.core.exceptions import ImproperlyConfigured
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.utils import get_default_release
 
@@ -458,7 +457,7 @@ SECURE_BROWSER_XSS_FILTER = True
 # https://docs.djangoproject.com/en/stable/ref/settings/#secure-content-type-nosniff
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
-DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 AUTH_USER_MODEL = "users.User"
 LOGIN_URL = "/auth/login/"
@@ -518,4 +517,6 @@ AUTH0_CLIENT_ID = env.get("AUTH0_CLIENT_ID")
 AUTH0_CLIENT_SECRET = env.get("AUTH0_CLIENT_SECRET")
 if AUTH0_DOMAIN:
     AUTHENTICATION_PROVIDER = "auth0"
-    AUTHENTICATION_BACKENDS.append("tna_account_management.authentication.auth0.backend.Auth0Backend")
+    AUTHENTICATION_BACKENDS.append(
+        "tna_account_management.authentication.auth0.backend.Auth0Backend"
+    )

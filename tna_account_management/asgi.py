@@ -11,6 +11,8 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tna_account_management.settings.production')
+os.environ.setdefault(
+    "DJANGO_SETTINGS_MODULE", "tna_account_management.settings.production"
+)
 
 application = get_asgi_application()

@@ -1,5 +1,6 @@
 from urllib.parse import quote_plus, urlencode, urlparse
 
+from authlib.integrations.django_client import OAuth
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login as auth_login
@@ -7,9 +8,6 @@ from django.contrib.auth import logout as auth_logout
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.urls import reverse
-
-from authlib.integrations.django_client import OAuth
-
 
 PROVIDER_NAME = "auth0"
 
@@ -41,7 +39,10 @@ def register(request):
     if next := request.GET.get("next"):
         request.session["auth_success_url"] = next
     return oauth.auth0.authorize_redirect(
-        request, request.build_absolute_uri(callback_url), screen_hint="signup", prompt="login"
+        request,
+        request.build_absolute_uri(callback_url),
+        screen_hint="signup",
+        prompt="login",
     )
 
 

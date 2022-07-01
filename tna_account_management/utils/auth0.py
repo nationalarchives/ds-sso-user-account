@@ -1,14 +1,12 @@
-from datetime import timedelta, datetime
-
-from django.conf import settings
-from django.utils.functional import cached_property
+from datetime import datetime, timedelta
 
 import requests
-
 from auth0.v3.authentication import GetToken
 from auth0.v3.exceptions import Auth0Error
-from auth0.v3.management import Users, Roles, Jobs
+from auth0.v3.management import Jobs, Roles, Users
 from auth0.v3.rest import RestClient
+from django.conf import settings
+from django.utils.functional import cached_property
 
 
 def check_credentials(username: str, password: str, realm: str):
@@ -46,11 +44,13 @@ class TokenGeneratingRestClient(RestClient):
         cleared by calling clear_cached_access_token().
         """
         current_time = datetime.now()
-        current_token = getattr(self, '_jwt_token', None)
-        current_token_expiry = getattr(self, '_jwt_token_expiry', current_time)
+        current_token = getattr(self, "_jwt_token", None)
+        current_token_expiry = getattr(self, "_jwt_token_expiry", current_time)
 
         # Reuse the current token if it's still valid
-        if current_token and (current_time + timedelta(seconds=5) < current_token_expiry):
+        if current_token and (
+            current_time + timedelta(seconds=5) < current_token_expiry
+        ):
             return current_token
 
         # There is not current token, or it will soon expire,
@@ -63,7 +63,7 @@ class TokenGeneratingRestClient(RestClient):
         )
 
         # Store the token for reuse
-        self._jwt_token = result['access_token']
+        self._jwt_token = result["access_token"]
 
         # Caclulate a new expiry date, so that we know when to
         # generate a fresh token
@@ -112,7 +112,10 @@ class TokenGeneratingRestClient(RestClient):
         is present.
         """
         response = requests.patch(
-            url, json=data, headers=self.get_base_headers(), timeout=self.options.timeout
+            url,
+            json=data,
+            headers=self.get_base_headers(),
+            timeout=self.options.timeout,
         )
         return self._process_response(response)
 
@@ -122,7 +125,10 @@ class TokenGeneratingRestClient(RestClient):
         is present.
         """
         response = requests.put(
-            url, json=data, headers=self.get_base_headers(), timeout=self.options.timeout
+            url,
+            json=data,
+            headers=self.get_base_headers(),
+            timeout=self.options.timeout,
         )
         return self._process_response(response)
 
@@ -148,7 +154,10 @@ class TokenGeneratingClient:
     @cached_property
     def client(self):
         return TokenGeneratingRestClient(
-            jwt=None, telemetry=self.telemetry, timeout=self.timeout, options=self.rest_options
+            jwt=None,
+            telemetry=self.telemetry,
+            timeout=self.timeout,
+            options=self.rest_options,
         )
 
 
@@ -158,6 +167,7 @@ class TokenGeneratingUsersClient(TokenGeneratingClient, Users):
     a jwt token when needed and automatically refreshes it and retries
     if it receives a "401: Invalid token" response from Auth0.
     """
+
     pass
 
 
@@ -167,6 +177,7 @@ class TokenGeneratingRolesClient(TokenGeneratingClient, Roles):
     a jwt token when needed and automatically refreshes it and retries
     if it receives a "401: Invalid token" response from Auth0.
     """
+
     pass
 
 

@@ -2,9 +2,10 @@ import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 
-from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 from django.utils.functional import cached_property
+
 from tna_account_management.utils import auth0
 
 
