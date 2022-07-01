@@ -69,11 +69,6 @@ class AccountDashboardView(LoginRequiredMixin, CommonContextMixin, TemplateView)
     template_name = "patterns/pages/user/dashboard.html"
     breadcrumbs_add_self = False
 
-    def get(self, request):
-        # Ensure user fields reflect live details before loading
-        request.user.update_from_profile()
-        return super().get(request)
-
 
 class VerifyEmailView(LoginRequiredMixin, CommonContextMixin, FormView):
     title = "Verify your email address"
@@ -82,8 +77,6 @@ class VerifyEmailView(LoginRequiredMixin, CommonContextMixin, FormView):
     success_url = reverse_lazy("dashboard")
 
     def get(self, request):
-        # Ensure user fields reflect live details
-        request.user.update_from_profile()
         # Redirect to dashboard if email already verified
         if request.user.email_verified:
             return redirect(self.success_url)

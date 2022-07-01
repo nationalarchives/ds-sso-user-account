@@ -62,11 +62,9 @@ def authorize(request):
         user = User.objects.get(auth0_id=auth0_id)
     except User.DoesNotExist:
         # Create a new user
-        user = User(auth0_id=auth0_id, is_social=not auth0_id.startswith("auth0|"))
+        user = User(auth0_id=auth0_id)
+        user.set_username(user_info.get("nickname"))
         user.set_unusable_password()
-
-    # Ensure details are up-to-date
-    user.update_from_profile()
 
     auth_login(
         request,
