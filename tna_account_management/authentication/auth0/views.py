@@ -66,6 +66,7 @@ def authorize(request):
         user = User(auth0_id=auth0_id)
         user.set_username(user_info.get("nickname"))
         user.set_unusable_password()
+        user.save()
 
     auth_login(
         request,
