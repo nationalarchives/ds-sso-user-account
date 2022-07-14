@@ -15,17 +15,16 @@ class UnsupportedForUser(Exception):
 
 class User(AbstractUser):
     auth0_id = models.CharField(max_length=36, blank=True, null=True, unique=True)
-    profile_override = models.JSONField(
-        null=True,
-        blank=True,
-        default=None,
-        help_text="When set, self.profile will return this value instead of fetching real profile data from Auth0.",
-    )
 
     @cached_property
     def profile(self) -> Dict[str, Any]:
-        if self.profile_override is not None:
-            return self.profile_override
+        """
+        Returns the profile data for this user from Auth0. Or, if the user is
+        not connected to an Auth0 user, a blank dict.
+
+        NOTE: This is a cached_property, so is 'setable'. Utilize this in tests
+        to set dummy profile data and avoid calls to Auth0.
+        """
         if self.auth0_id:
             return auth0.users_client.get(id=self.auth0_id)
         return {}
@@ -59,12 +58,14 @@ class User(AbstractUser):
 
     @cached_property
     def email(self) -> str:
-        return self.profile["email"]
+        return self.profile.get("email", "")
 
     @cached_property
     def name(self) -> str:
-        name = self.profile["name"]
+        name = self.profile.get("name", "")
         if name == self.email:
+            # Auth0 uses email as a placeholder when there is no name
+            # specified, but we don't want that substitution here
             return ""
         return name
 
