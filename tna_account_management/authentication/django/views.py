@@ -3,34 +3,19 @@ from urllib.parse import urlparse
 from django.conf import settings
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
-from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-from tbxforms.forms import BaseForm as HelperMixin
-from tbxforms.layout import Button
 
-
-class CrispyAuthenticationForm(HelperMixin, AuthenticationForm):
-    @property
-    def helper(self):
-        fh = super().helper
-        fh.layout.extend(
-            [
-                Button.primary(
-                    name="submit",
-                    type="submit",
-                    value="Sign in",
-                ),
-            ]
-        )
-        return fh
+from .forms import CrispyAuthenticationForm
 
 
 def login(request):
-    form = CrispyAuthenticationForm(data=request.POST or None)
+    form = CrispyAuthenticationForm(
+        data=request.POST or None, initial={"next": request.GET.get("next", "")}
+    )
     if request.POST and form.is_valid():
         auth_login(request, form.get_user())
-        redirect_to = form.cleaned_data.get("next", settings.LOGIN_REDIRECT_URL)
+        redirect_to = form.cleaned_data.get("next") or settings.LOGIN_REDIRECT_URL
         if redirect_to != settings.LOGIN_REDIRECT_URL:
             parsed = urlparse(redirect_to)
             if parsed.netloc and parsed.netloc != request.META.get("HTTP_HOST"):
@@ -44,8 +29,6 @@ def register(request):
 
 
 def logout(request):
-    if request.method != "POST":
-        return render(request, "patterns/pages/auth/logout_confirm.html")
     auth_logout(request)
     return redirect(settings.LOGOUT_REDIRECT_URL)
 
