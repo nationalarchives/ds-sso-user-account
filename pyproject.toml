@@ -23,7 +23,7 @@ auth0-python = "^3.23.1"
 gunicorn = ["gunicorn"]
 
 [tool.poetry.dev-dependencies]
-Werkzeug = "^2.0.3"
+Werkzeug = "^2.2.3"
 django-extensions = "~2.2"
 
 # Linters etc.
